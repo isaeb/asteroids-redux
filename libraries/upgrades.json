@@ -1,0 +1,261 @@
+{
+    "scout":{
+        "upgrades":{
+            "movement":{
+                "newFeature":[
+                    3,
+                    6,
+                    9
+                ],
+                "defaultDescription": "20% improved spin & acceleration.",
+                "features":{
+                    "Reverse Thrusters":{
+                        "desc": "Accelerate in reverse by pressing down.",
+                        "defaultDescription": "20% improved friction.",
+                        "children":{
+                            "Afterburners":{
+                                "desc": "Burn fuel to accelerate at super speed. Fuel recharges while not accelerating.",
+                                "defaultDescription": "20% improved afterburn boost.",
+                                "children":{
+                                    "Extra Fuel Tank":{
+                                        "desc": "Double your afterburners fuel capacity.",
+                                        "children":{
+                                            
+                                        }
+                                    },
+                                    "Tactical Dash":{
+                                        "desc": "Double tap either up or down to perform a forward or backwards dash.",
+                                        "children":{
+                                            
+                                        }
+                                    }
+                                }
+                            },
+                            "Evasion Mode":{
+                                "desc": "On-hit, enter evasion mode for 4 seconds. While in evasion mode, your spin-speed, acceleration, and friction are improved.",
+                                "defaultDescription": "25% longer evasion mode.",
+                                "children":{
+                                    "Manual Evasion":{
+                                        "desc": "Manually activate evasion mode by pressing forward and back at the same time while the evasion meter is fully charged. Evasion mode no longer activates without a full meter",
+                                        "children":{
+                                            
+                                        }
+                                    },
+                                    "Tactical Dash":{
+                                        "desc": "Double tap either up or down to perform a forward or backwards dash.",
+                                        "children":{
+                                            
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "Super Spinning":{
+                        "desc": "Spin at a greatly increased speed.",
+                        "defaultDescription": "20% improved spin & acceleration.",
+                        "children":{
+                            "Afterburners":{
+                                "desc": "Burn fuel to accelerate at super speed. Fuel recharges while not accelerating.",
+                                "defaultDescription": "20% improved afterburn boost.",
+                                "children":{
+                                    "Extra Fuel Tank":{
+                                        "desc": "Double your afterburners fuel capacity.",
+                                        "children":{
+                                            
+                                        }
+                                    },
+                                    "Initial Dash":{
+                                        "desc": "Perform a dash while initially accelerating.",
+                                        "children":{
+                                            
+                                        }
+                                    }
+                                }
+                            },
+                            "Evasion Mode":{
+                                "desc": "On-hit, enter evasion mode for 4 seconds. While in evasion mode, your spin-speed, acceleration, and friction are improved.",
+                                "defaultDescription": "25% longer evasion mode.",
+                                "children":{
+                                    "Manual Evasion":{
+                                        "desc": "Manually activate evasion mode by pressing forward and back at the same time while the evasion meter is fully charged. Evasion mode no longer activates without a full meter",
+                                        "children":{
+                                            
+                                        }
+                                    },
+                                    "Initial Dash":{
+                                        "desc": "Perform a dash while initially accelerating.",
+                                        "children":{
+                                            
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "weapons":{
+                "newFeature":[
+                    3,
+                    6,
+                    9
+                ],
+                "defaultDescription": "Your bullets do 30% more damage.",
+                "features":{
+                    "Rapid-Fire":{
+                        "desc": "Double firing speed. Also enable fully automatic fire.",
+                        "defaultDescription": "30% faster fire.",
+                        "children":{
+                            "Wave-Beam":{
+                                "desc": "Fire 3 bullets at once in a wave.",
+                                "defaultDescription": "Fire 1 more bullet at a time.",
+                                "children":{
+                                    "Ultra-Beam":{
+                                        "desc": "Projectiles do more damage and travel faster."
+                                    },
+                                    "Hyper-Blast":{
+                                        "desc": "Build up charge when not firing. Expend charge by firing a super damaging, hyper-blast."
+                                    }
+                                }
+                            },
+                            "Laser-Beam":{
+                                "desc": "Bullets are replaced by fast-traveling lasers.",
+                                "defaultDescription": "Your lasers do 30% more damage.",
+                                "children":{
+                                    "Piercing Lasers":{
+                                        "desc": "Lasers pierce through enemies."
+                                    },
+                                    "Hyper-Laser":{
+                                        "desc": "Build up charge when not firing. Expend charge by firing a super damaging, hyper-laser."
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "Spread-Beam":{
+                        "desc": "Fire 3 bullets at once in a spread.",
+                        "defaultDescription": "30% faster fire.",
+                        "children":{
+                            "Extra Bullets":{
+                                "desc": "Fire 5 bullets instead of 3.",
+                                "defaultDescription": "Fire an extra bullet.",
+                                "children":{
+                                    "Gunner Drones":{
+                                        "desc": "Deploy 2 drones that stay at your side and fire when you fire."
+                                    },
+                                    "Orbiting Drone":{
+                                        "desc": "Deploy an orbiting drone that automatically fires at nearby enemies."
+                                    }
+                                }
+                            },
+                            "Spread-Lasers":{
+                                "desc": "Fire 3 lasers instead of 3 bullets.",
+                                "defaultDescription": "Fire an extra laser.",
+                                "children":{
+                                    "Charge Laser":{
+                                        "desc": "Build up charge when not firing. Expend charge by firing a spread of extra damaging, lasers."
+                                    },
+                                    "Laser Drone":{
+                                        "desc": "Deploy an orbiting drone that automatically fires lasers at nearby enemies."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "special":{
+                "defaultDescription": "Teleport recharges 30% faster.",
+                "newFeature":[
+                    3,
+                    6,
+                    9
+                ],
+                "features":{
+                    "Extra Charge":{
+                        "desc": "Teleport meter is twice as big, making 2 subsequent teleports possible. This also makes fully charging meter take twice as long.",
+                        "defaultDescription": "Teleport meter builds 30% faster.",
+                        "children":{
+                            "Auto Teleport":{
+                                "desc": "Teleport automatically when you would've gotten hit. Auto-teleportation requires full meter and is only available once per mission.",
+                                "defaultDescription": "Teleport meter builds 30% faster.",
+                                "children":{
+                                    "Double Auto Teleport":{
+                                        "desc": "Auto teleportation is useable twice per round. Full teleport meter is still required."
+                                    },
+                                    "Temporary Invincibility":{
+                                        "desc": "On-teleport, become invincible for 3 seconds."
+                                    }
+                                }
+                            },
+                            "Temporary Invincibility":{
+                                "desc": "On-teleport, become invincible for 3 seconds.",
+                                "defaultDescription": "Teleport meter builds 30% faster.",
+                                "children":{
+                                    "Longer Invinsibility":{
+                                        "desc": "Invincibility on teleport lasts twice as long."
+                                    },
+                                    "Auto Teleport":{
+                                        "desc": "Teleport automatically when you would've gotten hit. Auto-teleportation requires full meter and is only available once per mission."
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "Impact Teleport":{
+                        "desc": "On-teleport, create a shockwave that pushes back enemies and projectiles.",
+                        "defaultDescription": "Teleport recharges 30% faster.",
+                        "children":{
+                            "Damaging Impact":{
+                                "desc": "Shockwaves caused by teleporting now do damage to surrounding enemies.",
+                                "defaultDescription": "Teleport meter builds 30% faster.",
+                                "children":{
+                                    "Extra Charge":{
+                                        "desc": "Teleport meter twice as long, making 2 subsequent teleports possible. This also makes fully charging meter take twice as long."
+                                    },
+                                    "Telenuke":{
+                                        "desc": "On-teleport, damage every enemy on screen in addition to creating a shockwave."
+                                    }
+                                }
+                            },
+                            "Teleport Power-Up":{
+                                "desc": "On-teleport, do more damage and fire faster for 6 seconds.",
+                                "defaultDescription": "Teleport meter builds 30% faster.",
+                                "children":{
+                                    "Extra Charge":{
+                                        "desc": "Teleport meter twice as long, making 2 subsequent teleports possible. This also makes fully charging meter take twice as long."
+                                    },
+                                    "Longer Power-Up":{
+                                        "desc": "The power-up on teleport lasts twice as long."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "auxiliary":{
+                "defaultDescription":"",
+                "newFeature":[
+                    1,
+                    3,
+                    5,
+                    7,
+                    9
+                ],
+                "features":{
+                }
+            }
+        }
+    },
+    "bomber":{
+
+    },
+    "engineer":{
+        
+    },
+    "heavy":{
+        
+    }
+}
