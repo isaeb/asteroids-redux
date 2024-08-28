@@ -153,13 +153,13 @@ class Bullet:
     def updateCollisions(self, game:dict):
         n = self.checkAsteroidCollision(game)
         if n is not None:
-            effects.createExplosion(self.x, self.y, game)
+            effects.createExplosion(self.x, self.y, game, self.size)
             game['asteroids'][n].health -= 1
             return True
     
         n = self.checkEnemyCollision(game)
         if n is not None:
-            effects.createExplosion(self.x, self.y, game)
+            effects.createExplosion(self.x, self.y, game, self.size)
             game['enemies'][n].health -= 1
             return True
         

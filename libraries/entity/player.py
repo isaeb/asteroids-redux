@@ -13,6 +13,8 @@ from libraries.entity.particle import Particle
 from libraries.entity.shipPart import Line
 from libraries.constants import *
 
+import json
+
 
 playerShape = [(0, 1), (math.pi * 0.75, 1), (math.pi, 0.25), (math.pi * 1.25, 1)]
 
@@ -40,6 +42,8 @@ class Player:
         self.acceleration = 60
         self.maxSpeed = 640
         self.friction = 0
+        self.reverse = 0
+        self.noAccelMulti = 1
 
         self.maxHealth = 1
         self.health = 1
@@ -58,7 +62,33 @@ class Player:
         self.maxBullets = MAX_BULLETS
 
         self.updatePosition()
-    
+
+        # Upgrade Variables
+
+        # Afterburn
+        self.afterburn = False
+        self.afterburnBoost = 0
+        self.afterburnMax = 0
+
+        # Tactical Dash
+        self.tacticalDash = False
+        self.tacticalDashDistance = 60
+        self.tacticalDashTime = 0.4
+
+        # Evasion Mode
+        self.evasionMode = False
+        self.evasionModeCost = 0
+        self.evasionModeMax = 0
+        self.evasionModeRotation = 0
+        self.evasionModeAcceleration = 0
+        self.evasionModeFriction = 0
+        self.manualEvasion = False
+
+        # Initial Dash
+        self.initialDash = False
+        self.initialDashDistance = 0
+        self.initialDashTime = 0
+ 
     def draw(self, game:dict):
         """
         Args:
@@ -100,8 +130,6 @@ class Player:
             # Apply velocity
             self.x = (self.x + self.x_vel * (game['frametime'] / 1000)) % game['gameWidth']
             self.y = (self.y + self.y_vel * (game['frametime'] / 1000)) % game['gameHeight']
-
-            
 
         # Update the position of the player
         self.points = [(self.x + math.cos(point[0] + self.angle) * self.size * point[1],
@@ -234,6 +262,7 @@ class Player:
             self.angle += self.rotation * (game['frametime'] / 1000)
 
         if keys[pygame.K_UP]:
+            
             self.x_vel += math.cos(self.angle) * (game['frametime'] / 1000) * self.acceleration
             self.y_vel += math.sin(self.angle) * (game['frametime'] / 1000) * self.acceleration
 
@@ -260,15 +289,30 @@ class Player:
                 game['particles'].append(Particle(pX, pY, pVelX, pVelY, 4, 0, pygame.Color(255, 255, 0, 255), pygame.Color(255, 0, 0, 100), 0.1, layer=1))
 
         else:
+            vectorMagnitude = math.sqrt(self.x_vel ** 2 + self.y_vel ** 2)
+            
+            if vectorMagnitude > self.maxSpeed * self.noAccelMulti:
+                scaleFactor = self.maxSpeed * self.noAccelMulti / vectorMagnitude
+                self.x_vel *= scaleFactor
+                self.y_vel *= scaleFactor
+
+            # Apply Friction
             angle = math.atan2(self.y_vel, self.x_vel)
-
-            magnitude = math.sqrt(self.y_vel ** 2 + self.x_vel ** 2)
-            magnitude = max(0, magnitude - self.friction * game['frametime'] / 1000)
-
             self.x_vel -= math.cos(angle) * self.friction * game['frametime'] / 1000
             self.y_vel -= math.sin(angle) * self.friction * game['frametime'] / 1000
 
             self.progress = 0
+
+        if keys[pygame.K_DOWN]:
+            self.x_vel -= math.cos(self.angle) * (game['frametime'] / 1000) * (self.reverse + self.friction)
+            self.y_vel -= math.sin(self.angle) * (game['frametime'] / 1000) * (self.reverse + self.friction)
+
+            vectorMagnitude = math.sqrt(self.x_vel ** 2 + self.y_vel ** 2)
+            
+            if vectorMagnitude > self.maxSpeed:
+                scaleFactor = self.maxSpeed / vectorMagnitude
+                self.x_vel *= scaleFactor
+                self.y_vel *= scaleFactor
 
     def update(self, game:dict):
         """
@@ -276,12 +320,10 @@ class Player:
             game (dict): The game dict
         """
 
-        self.draw(game)
-        
         if self.enabled:
+            self.draw(game)
             self.updateControl(game)
-        
-        self.updatePosition(game)
+            self.updatePosition(game)
         
         # Test for collisions
         if self.updateCollisions(game):
@@ -298,13 +340,63 @@ class Player:
     def enable(self):
         self.enabled = True
 
+    def applyUpgrade(self, script):
+        script = script.split(';')
+        for line in script:
+            print(f'Applying change: {line}')
+            line = line.split(' ')
+
+            var = line[1]
+            value = line[2]
+            
+            match line[0]:
+                case 'set':
+                    operator = ' = '
+                case 'multiply':
+                    operator = ' *= '
+                case 'add':
+                    operator = ' += '
+            
+            exec(f'self.{var} {operator} {value}')
+
     def updateStats(self, game:dict):
         match game['class']:
             case 'scout':
-                self.acceleration = 90
-                self.maxSpeed = 300
+                self.acceleration = 140
+                self.maxSpeed = 160
                 self.rotation = 3
-                self.friction = 20
+                self.friction = 100
                 self.maxHealth = 2
                 self.health = 2
                 self.specialName = 'TELEPORT'
+                self.noAccelMulti = 0.7
+
+        # Opening JSON file
+        with open('libraries/upgrades.json') as json_file:
+            upgradeDict = json.load(json_file)
+
+        # Upgrade Self
+        for category in ['movement', 'weapons', 'special', 'auxiliary']:
+            tempDict = upgradeDict[game['class']]['upgrades'][category]
+            newFeature = tempDict['newFeature']
+            
+            level = game[category]
+            for l in range(level):
+                # Apply a new feature
+                if (l + 1) in newFeature:
+
+                    # Iterate
+                    index = newFeature.index(l + 1)
+                    if index > 0:
+                        tempDict = tempDict['children']
+                    else:
+                        tempDict = tempDict['features']
+                    tempDict = tempDict[game[f'{category}Features'][index]]
+
+                    self.applyUpgrade(tempDict['function'])
+                
+                # Apply a default upgrade
+                else:
+                    self.applyUpgrade(tempDict['defaultFunction'])
+                
+                level -= 1

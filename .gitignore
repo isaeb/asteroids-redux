@@ -1,3 +1,6 @@
+.VSCodeCounter
 *.txt
 venv
 build
+
+!requirements.txt

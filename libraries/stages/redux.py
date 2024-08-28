@@ -6,14 +6,16 @@ from libraries.constants import *
 
 from libraries.entity.player import Player
 from libraries.stages.reduxUpgrades import ReduxUpgrades
+from libraries.stages.reduxResults import ReduxResults
 from libraries.services.drawEffects import renderText, create_vignette_surface
+from libraries.services.effects import Score
 
 from random import random
 
 WIDTH = 1280
 HEIGHT = 960
 
-maxCooldown = 2
+maxCooldown = 3
 
 class Redux:
     def __init__(self, game:dict):
@@ -32,6 +34,7 @@ class Redux:
         game['weaponsFeatures'] = []
         game['specialFeatures'] = []
         game['auxiliaryFeatures'] = []
+        game['last'] = 'Redux'
 
         # Declare Variables
         self.score = 0
@@ -54,14 +57,23 @@ class Redux:
         self.ammoColor = pygame.Color(200, 200, 200)
 
         self.timerFont = pygame.font.Font('fonts/Signwood.ttf', int(game['screenHeight'] * 0.12))
-
-        # New level
-        self.newLevel(game)
+        
+        self.hitFont = pygame.font.Font('fonts/NikkyouSans.ttf', int(game['screenHeight'] * 0.03))
+        
+        self.scoreFont = pygame.font.Font('fonts/NikkyouSans.ttf', int(game['screenHeight'] * 0.04))
+        self.scoreStartColor = pygame.Color(255, 255, 150)
+        self.scoreEndColor = pygame.Color(200, 200, 150)
 
         # Set up gui
         self.guiSurface = pygame.Surface((game['screenWidth'], game['screenHeight']))
         self.guiModules = []
-        self.timerObject = ReduxClock(game['screen'], self.timerFont)
+        self.fadeout = 1
+        self.fadeoutSurf = pygame.Surface((game['screenWidth'], game['screenHeight']))
+        self.fadeoutSurf.fill((0, 0, 0))
+        self.guiAlpha = 1
+
+        # New level
+        self.newLevel(game)
 
         # Special
         yOffset = self.healthFont.render('HEALTH', True, self.healthColor).get_height() * 1.5
@@ -83,6 +95,7 @@ class Redux:
 
         self.state = 'gameplay'
         self.upgradeObject = ReduxUpgrades(game)
+        self.resultsObject = ReduxResults(game)
 
         # Set up background
         game['background'].fill((0, 0, 0))
@@ -90,13 +103,22 @@ class Redux:
         # Set up vignette
         self.vignetteSurf = create_vignette_surface((game['screenWidth'], game['screenHeight']), (0, 0, 0), game['screenWidth'] * 0.45)
 
+        # Mission Complete Object
+        self.missionComplete = None
+
+        # Stats
+        self.asteroidsDestroyed = 0
+        self.enemiesDestroyed = 0
+
     def newLevel(self, game:dict):
         self.enemyCount = len(game['enemies'])
         self.level += 1
         self.spawnTick = max(1, 10 - self.level)
-        self.targetScore = self.level * 100 + 50
+        self.targetScore = 50 + 10 * self.level
 
-        self.timerObject = ReduxClock(game['screen'], self.timerFont)
+        self.timerObject = ReduxClock(self.guiSurface, self.timerFont, time=60)
+        self.missionComplete = None
+        self.guiSurface.set_alpha(255)
 
         game['bullets'] = []
         game['asteroids'] = []
@@ -115,16 +137,19 @@ class Redux:
         starY = numpy.random.uniform(0, HEIGHT, starCount)
         self.stars = [(starX[i], starY[i], pygame.Color(random() * 255, random() * 255, random() * 255, 255)) for i in range(len(starX))]
 
-        for _ in range(30):
+        for _ in range(15):
             r = random()
             color = pygame.Color(16 + r * 16, r * 20, r * 10)
             spawn.spawnAsteroid(game, player=game['players'][0], spawnRange=160, color=color)
 
-        for _ in range(10):
+        for _ in range(7):
             spawn.spawnReduxTurret(game, player=game['players'][0], spawnRange=160)
 
         for _ in range(10):
             spawn.spawnReduxSatellite(game, player=game['players'][0], spawnRange=160)
+        
+        for _ in range(3):
+            spawn.spawnReduxUFO(game, player=game['players'][0], spawnRange=160)
 
     async def update(self, game:dict):
         if self.state == 'gameplay':
@@ -146,7 +171,7 @@ class Redux:
 
             # Update Background
             game['screen'].fill((0, 0, 0))
-            await drawStars(game['screen'], self.stars, game)
+            drawStars(game['screen'], self.stars, game)
             for layer in game['layers']:
                 layer.fill((1, 1, 1))
                 layer.set_colorkey((1, 1, 1))
@@ -162,6 +187,8 @@ class Redux:
                 if asteroid.update(game):
                     continue
                 game['asteroids'].pop(index)
+                game['particles'].append(Score(asteroid.x, asteroid.y, self.hitFont, '1'))
+                self.asteroidsDestroyed += 1
                 self.score += 1
 
             # Update Enemies
@@ -169,6 +196,8 @@ class Redux:
                 if enemy.update(game):
                     continue
                 game['enemies'].pop(index)
+                game['particles'].append(Score(enemy.x, enemy.y, self.hitFont, f'{enemy.value}'))
+                self.enemiesDestroyed += 1
                 self.score += enemy.value
 
             # Update Enemy Projectiles
@@ -187,32 +216,51 @@ class Redux:
             # Draw Vignette
             game['screen'].blit(self.vignetteSurf, (0, 0))
 
+            if len(game['players']) == 0:
+                self.guiAlpha = max(0, self.guiAlpha - game['frametime'] / 1000)
+            self.guiSurface.set_alpha(self.guiAlpha * 255)
+
             # Update Gui
             self.updateGui(game)
             game['screen'].blit(self.guiSurface, (0, 0))
-            
-            pygame.display.flip()
 
+            # Mission Complete
+            if self.missionComplete is not None:
+                self.missionComplete.update(game)
+            
             if self.score >= self.targetScore:
-                if len(game['players']) > 0:
+                if len(game['players']) > 0 and game['players'][0].enabled:
                     game['players'][0].disable()
+                    self.missionComplete = ReduxMissionComplete(5, game)
+                    self.resultsObject = ReduxResults(game, asteroidsDestroyed=self.asteroidsDestroyed, enemiesDestroyed=self.enemiesDestroyed, timeLeft=self.timerObject.time,stars=3)
 
                 self.cooldown -= game['frametime'] / 1000
+                self.guiSurface.set_alpha(max(0, (self.cooldown - maxCooldown + 1)) * 255)
+                self.fadeout = max(0, 1 - self.cooldown)
                 if self.cooldown <= 0:
-                    self.upgradeObject = ReduxUpgrades(game)
                     self.score = 0
-                    self.state = 'upgrades'
-                    self.cooldown = maxCooldown
+                    self.state = 'results'
+                    self.cooldown = 0
+            
+            if self.fadeout > 0:
+                self.fadeoutSurf.set_alpha(self.fadeout * 255)
+                game['screen'].blit(self.fadeoutSurf, (0, 0))
+                if self.score < self.targetScore:
+                    self.fadeout -= game['frametime'] / 1000
+
+            pygame.display.flip()
 
             # Gameover
             if len(game['shipParts']) == 0 and len(game['players']) == 0:
+                game['score'] = self.score
+                drawStars(game['background'], self.stars, game)
                 return 'Gameover'
             
         elif self.state == 'upgrades':
-
+            
             # Update Background
             game['screen'].fill((0, 0, 0))
-            await drawStars(game['screen'], self.stars, game)
+            drawStars(game['screen'], self.stars, game)
             for layer in game['layers']:
                 layer.fill((1, 1, 1))
                 layer.set_colorkey((1, 1, 1))
@@ -231,9 +279,61 @@ class Redux:
             r = self.upgradeObject.update(game)
             if r is not None:
                 if r:
+                    self.cooldown = 1
+
+            if self.cooldown > 0:
+                self.cooldown -= game['frametime'] / 1000
+                self.fadeout = 1 - self.cooldown
+                if self.cooldown <= 0:
                     self.newLevel(game)
                     self.state = 'gameplay'
+                    self.cooldown = maxCooldown
 
+            if self.fadeout > 0:
+                self.fadeoutSurf.set_alpha(self.fadeout * 255)
+                game['screen'].blit(self.fadeoutSurf, (0, 0))
+                if self.cooldown == 0:
+                    self.fadeout -= game['frametime'] / 1000
+
+            pygame.display.flip()
+
+        elif self.state == 'results':
+
+            if self.cooldown > 0:
+                self.cooldown -= game['frametime'] / 1000
+                self.fadeout = max(0, 1 - self.cooldown)
+                if self.cooldown <= 0:
+                    self.upgradeObject = ReduxUpgrades(game)
+                    self.score = 0
+                    self.state = 'upgrades'
+                    self.cooldown = 0
+
+            # Update Background
+            game['screen'].fill((0, 0, 0))
+            drawStars(game['screen'], self.stars, game)
+            for layer in game['layers']:
+                layer.fill((1, 1, 1))
+                layer.set_colorkey((1, 1, 1))
+
+            # Update Asteroids
+            for index, asteroid in reversed(list(enumerate(game['asteroids']))):
+                if asteroid.update(game):
+                    continue
+                game['asteroids'].pop(index)
+
+            # Update the Game Display
+            for layer in game['layers']:
+                game['screen'].blit(layer, (0, 0))
+            
+            # Update UI
+            r = self.resultsObject.update(game)
+            if r and self.cooldown <= 0:
+                self.cooldown = 1
+
+            if self.fadeout > 0:
+                self.fadeoutSurf.set_alpha(self.fadeout * 255)
+                game['screen'].blit(self.fadeoutSurf, (0, 0))
+                self.fadeout -= game['frametime'] / 1000
 
             pygame.display.flip()
 
@@ -241,17 +341,17 @@ class Redux:
             pass
 
     def updateGui(self, game:dict):
-        # Draw Clock
-        self.timerObject.update(game, (self.score < self.targetScore))
-
         # clear canvas
         self.guiSurface.fill((1, 1, 1))
         self.guiSurface.set_colorkey((1, 1, 1))
 
+        # Draw Clock
+        self.timerObject.update(game, (self.score < self.targetScore))
+
         # Draw Modules
         for module in self.guiModules:
             module.update(game)
-            module.draw(game['screen'])
+            module.draw(self.guiSurface)
 
         # Draw Mission Text
         gradientColor = (self.missionColor.r * 0.8, self.missionColor.g * 0.8, self.missionColor.b * 0.8)
@@ -273,6 +373,14 @@ class Redux:
         progress = min(1, self.score / self.targetScore)
         margin = 4
         pygame.draw.rect(self.guiSurface, scoreBarColor, pygame.Rect(x + margin, y + margin, (missionWidth - margin * 2) * progress, missionHeight * 0.4 - margin * 2))
+
+        # Draw Score Text
+        scoreSurf = renderText(f'{self.score} / {self.targetScore}', self.scoreFont, self.scoreStartColor, self.scoreEndColor, (50, 50, 50), (3, 3), (0, 0, 0), 1)
+        scoreWidth = scoreSurf.get_width()
+        scoreHeight = scoreSurf.get_height()
+        x = game['screenWidth'] * 0.97 - scoreWidth
+        y = game['screenHeight'] * 0.03 + missionHeight * 1.5
+        self.guiSurface.blit(scoreSurf, (x, y))
 
         # Draw Health Text
         gradientColor = (self.healthColor.r * 0.8, self.healthColor.g * 0.8, self.healthColor.b * 0.8)
@@ -301,7 +409,7 @@ class Redux:
         margin = 4
         pygame.draw.rect(self.guiSurface, scoreBarColor, pygame.Rect(x + margin, y + margin, (self.healthLength - margin * 2) * progress, healthHeight * 0.4 - margin * 2))
 
-async def drawStars(surf:pygame.Surface, points:list, game:dict):
+def drawStars(surf:pygame.Surface, points:list, game:dict):
 
     offsetX = -game['scrollX']
     offsetY = -game['scrollY']
@@ -387,3 +495,46 @@ class ReduxClock:
         x = game['screenWidth'] / 2 - width / 2
         y = game['screenHeight'] * 0.02
         surf.blit(textSurf, (x, y))
+
+class ReduxMissionComplete:
+    def __init__(self, time, game:dict):
+        self.time = time
+        self.maxTime = time
+        self.initialFlash = 1
+        self.text = 'MISSION COMPLETE'
+        self.fontPath = 'fonts/Signwood.ttf'
+        self.fontSize = game['screenHeight'] * 0.15
+        self.startColor = pygame.Color(255, 0, 0)
+        self.endColor = pygame.Color(200, 0, 0)
+
+    def update(self, game:dict):
+        self.time -= game['frametime'] / 1000
+        if self.time < 0:
+            return False
+        
+        self.draw(game)
+        return True
+
+    def draw(self, game:dict):
+        progress = (self.maxTime - self.time)
+        alpha = 1
+        flash = 0
+        size = 1
+
+        if progress < self.initialFlash:
+            alpha = min(1, progress / (self.initialFlash / 2))
+            flash = max(0, 1 - progress / (self.initialFlash / 2))
+            size = 1
+        
+        font = pygame.font.Font(self.fontPath, int(self.fontSize * size))
+
+        surf = renderText(self.text, font, self.startColor, self.endColor, (50, 50, 50), (5, 5), (0, 0, 0), 2)
+        if flash > 0:
+            flashSurf = renderText(self.text, font, (255, 255, 255), (255, 255, 255), (255, 255, 255), (5, 5), (0, 0, 0), 2)
+            flashSurf.set_alpha(flash * 255)
+            surf.blit(flashSurf, (0, 0))
+        surf.set_alpha(alpha * 255)
+
+        x = game['screenWidth'] / 2 - surf.get_width() / 2
+        y = game['screenHeight'] / 2 - surf.get_height() / 2
+        game['screen'].blit(surf, (x, y))

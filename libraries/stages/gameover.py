@@ -1,6 +1,9 @@
 import pygame
 import math
 
+from libraries.services.drawEffects import renderText, create_vignette_surface
+from libraries.services.fallingStarBackground import FallingStarBackground as BG
+
 pressedKeys = []
 
 thickness = 3
@@ -8,45 +11,35 @@ thickness = 3
 class Gameover:
     def __init__(self, game):
 
-        self.options = {'RETRY':'Classic', 'QUIT':'Title'}
-        self.width = game['screenWidth']
-        self.height = game['screenHeight']
-        self.titleSize = self.height / 4
-        self.optionSize = self.height / 12
+        self.options = {'TRY AGAIN':f'{game['last']}', 'LEADERBOARDS':'Leaderboards', 'MAIN MENU':'Title'}
+        width = game['screenWidth']
+        height = game['screenHeight']
+        self.titleSize = height / 4
+        self.scoreSize = height / 16
+        self.optionSize = height / 20
 
         self.selected = 0
 
-        # Define the font
-        self.optionFont = pygame.font.Font('fonts/PastiRegular.otf', int(self.optionSize))
+        # Darken Background
+        self.fadeout = 1
+        self.darkSurf = pygame.Surface((game['screenWidth'], game['screenHeight']), pygame.SRCALPHA)
+        transparent_color = (0, 0, 0, 255 - 255 * self.fadeout)
+        self.darkSurf.fill(transparent_color)
+
+        # Set up vignette
+        self.vignetteSurf = create_vignette_surface((game['screenWidth'], game['screenHeight']), (0, 0, 0), game['screenWidth'] * 0.45)
+
+        # Create bg
+        self.bg = BG()
+        self.bgAlpha = 0
+        self.bgSurf = pygame.surface.Surface((width, height), pygame.SRCALPHA)
         
-        # Initialize the title surface
-        self.headerSurface = pygame.surface.Surface((self.width, self.titleSize + thickness * 2))
-        self.headerSurface.fill((1, 1, 1))
-        self.headerSurface.set_colorkey((1, 1, 1))
-
-        # Define the font
-        self.titleFont = pygame.font.Font('fonts/PastiRegular.otf', int(self.titleSize))
-
-        # Draw the title outline
-        for angle in range(8):
-            textSurface = self.titleFont.render('GAME OVER', True, (0, 0, 0))
-            offsetX = (self.width - textSurface.get_size()[0]) / 2
-            offsetY = thickness
-            x = offsetX + math.cos(math.pi * angle / 4) * thickness
-            y = offsetY + math.sin(math.pi * angle / 4) * thickness
-            self.headerSurface.blit(textSurface, (x, y))
-        
-        # Draw the title main text
-        textSurface = self.titleFont.render('GAME OVER', True, (255, 255, 255))
-        x = (self.width - textSurface.get_size()[0]) / 2
-        y = thickness
-        self.headerSurface.blit(textSurface, (x, y))
-
-        self.drawOptions()
+        self.refreshGui(game)
 
     async def update(self, game:dict):
 
         game['screen'].blit(game['background'], (0, 0))
+        
         for layer in game['layers']:
             layer.fill((1, 1, 1))
             layer.set_colorkey((1, 1, 1))
@@ -76,11 +69,34 @@ class Gameover:
         for layer in game['layers']:
             game['screen'].blit(layer, (0, 0))
 
+        # Darken
+        self.fadeout = max(0, self.fadeout - game['frametime'] / 1000)
+        transparent_color = (0, 0, 0, 255 - 255 * self.fadeout)
+        self.darkSurf.fill(transparent_color)
+        game['screen'].blit(self.darkSurf, (0, 0))
+
+        if self.fadeout < 0.5:
+            self.bgAlpha = min(1, self.bgAlpha + game['frametime'] / 1000)
+            self.bg.update(game)
+            self.bgSurf.fill((0, 0, 0))
+            self.bg.draw(self.bgSurf, game)
+            self.bgSurf.set_alpha(255 * self.bgAlpha)
+            game['screen'].blit(self.bgSurf, (0, 0))
+
+        # Draw Vignette
+        game['screen'].blit(self.vignetteSurf, (0, 0))
+
         # Draw the header
-        game['screen'].blit(self.headerSurface, (0, self.height * 0.1))
+        self.headerSurface.set_alpha(255 - 255 * self.fadeout)
+        game['screen'].blit(self.headerSurface, (self.hX, self.hY))
+
+        # Draw the score
+        self.scoreSurface.set_alpha(255 - 255 * self.fadeout)
+        game['screen'].blit(self.scoreSurface, (self.sX, self.sY))
 
         # Draw the option
-        game['screen'].blit(self.optionSurface, (0, self.height * 0.4))
+        self.optionSurface.set_alpha(255 - 255 * self.fadeout)
+        game['screen'].blit(self.optionSurface, (0, 0))
         
         pygame.display.flip()
 
@@ -104,7 +120,7 @@ class Gameover:
             if pygame.K_UP not in pressedKeys:
                 pressedKeys.append(pygame.K_UP)
                 self.selected = max(0, self.selected - 1)
-                self.drawOptions()
+                self.refreshGui(game)
         else:
             if pygame.K_UP in pressedKeys:
                 pressedKeys.remove(pygame.K_UP)
@@ -113,57 +129,52 @@ class Gameover:
             if pygame.K_DOWN not in pressedKeys:
                 pressedKeys.append(pygame.K_DOWN)
                 self.selected = min(len(self.options) - 1, self.selected + 1)
-                self.drawOptions()
+                self.refreshGui(game)
         else:
             if pygame.K_DOWN in pressedKeys:
                 pressedKeys.remove(pygame.K_DOWN)
 
         return None
 
-        self.optionSurface = pygame.surface.Surface((self.width, len(self.options) * (self.optionSize + thickness * 2)))
+    def refreshGui(self, game):
+        width = game['screenWidth']
+        height = game['screenHeight']
+
+        # Initialize the title surface
+        headerFont = pygame.font.Font('fonts/Signwood.ttf', int(self.titleSize))
+        startColor = (200, 0, 0)
+        endColor = (200, 100, 100)
+        shadowColor = (50, 0, 0)
+        self.headerSurface = renderText('GAMEOVER', headerFont, startColor, endColor, shadowColor, (8, 8), (0, 0, 0), 2)
+        self.hX = width / 2 - self.headerSurface.get_width() / 2
+        self.hY = height / 8
+
+        # Initialize the score surface
+        scoreFont = pygame.font.Font('fonts/Signwood.ttf', int(self.scoreSize))
+        startColor = (200, 200, 200)
+        endColor = (150, 150, 150)
+        shadowColor = (50, 50, 50)
+        self.scoreSurface = renderText(f'Score: {game['score']}', scoreFont, startColor, endColor, shadowColor, (3, 3))
+        self.sX = width / 2 - self.scoreSurface.get_width() / 2
+        self.sY = height / 8 + self.headerSurface.get_height()
+
+        # Options
+        self.optionSurface = pygame.surface.Surface((width, height))
         self.optionSurface.fill((1, 1, 1))
         self.optionSurface.set_colorkey((1, 1, 1))
+        
+        font = pygame.font.Font('fonts/Signwood.ttf', int(self.optionSize))
+        shadowColor = (50, 50, 50)
+        x = 0
+        y = self.sY + self.scoreSurface.get_height() * 2
         for index, key in enumerate(self.options.keys()):
-
-            # Draw the option outline
-            for angle in range(8):
-                textSurface, rect = self.optionFont.render(key, (0, 0, 0))
-                offsetX = (self.width - rect[2]) / 2
-                offsetY = thickness + index * (self.optionSize + thickness * 2)
-                x = offsetX + math.cos(math.pi * angle / 4) * thickness
-                y = offsetY + math.sin(math.pi * angle / 4) * thickness
-                self.optionSurface.blit(textSurface, (x, y))
-
-            # Draw the option main text
-            color = (255, 255, 255)
             if index == self.selected:
-                color = (255, 255, 0)
-            textSurface, rect = self.optionFont.render(key, color)
-            x = (self.width - rect[2]) / 2
-            y = thickness + index * (self.optionSize + thickness * 2)
+                startColor = (255, 255, 255)
+                endColor = (200, 200, 200)
+            else:
+                startColor = (150, 150, 150)
+                endColor = (100, 100, 100)
+            textSurface = renderText(key, font, startColor, endColor, shadowColor, (3, 3))
+            x = width / 2 - textSurface.get_width() / 2
             self.optionSurface.blit(textSurface, (x, y))
-
-    def drawOptions(self):
-
-        self.optionSurface = pygame.surface.Surface((self.width, len(self.options) * (self.optionSize + thickness * 2)))
-        self.optionSurface.fill((1, 1, 1))
-        self.optionSurface.set_colorkey((1, 1, 1))
-        for index, key in enumerate(self.options.keys()):
-
-            # Draw the option outline
-            for angle in range(8):
-                textSurface = self.optionFont.render(key, True, (0, 0, 0))
-                offsetX = (self.width - textSurface.get_size()[0]) / 2
-                offsetY = thickness + index * (self.optionSize + thickness * 2)
-                x = offsetX + math.cos(math.pi * angle / 4) * thickness
-                y = offsetY + math.sin(math.pi * angle / 4) * thickness
-                self.optionSurface.blit(textSurface, (x, y))
-
-            # Draw the option main text
-            color = pygame.Color(255, 255, 255)
-            if index == self.selected:
-                color = (255, 255, 0)
-            textSurface = self.optionFont.render(key, True, color)
-            x = (self.width - textSurface.get_size()[0]) / 2
-            y = thickness + index * (self.optionSize + thickness * 2)
-            self.optionSurface.blit(textSurface, (x, y))
+            y += textSurface.get_height()

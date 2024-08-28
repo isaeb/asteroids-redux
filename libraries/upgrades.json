@@ -7,24 +7,31 @@
                     6,
                     9
                 ],
-                "defaultDescription": "20% improved spin & acceleration.",
+                "defaultDescription": "20% improved max speed & acceleration.",
+                "defaultFunction": "multiply acceleration 1.2;multiply maxSpeed 1.2",
                 "features":{
                     "Reverse Thrusters":{
                         "desc": "Accelerate in reverse by pressing down.",
+                        "function": "set reverse 80",
                         "defaultDescription": "20% improved friction.",
+                        "defaultFunction": "multiply friction 1.2",
                         "children":{
                             "Afterburners":{
                                 "desc": "Burn fuel to accelerate at super speed. Fuel recharges while not accelerating.",
+                                "function": "set afterburn True;set afterburnBoost 60;set afterburnMax 1",
                                 "defaultDescription": "20% improved afterburn boost.",
+                                "defaultFunction": "multiply afterburnBoost 1.2",
                                 "children":{
                                     "Extra Fuel Tank":{
                                         "desc": "Double your afterburners fuel capacity.",
+                                        "function": "multiply afterburnMax 2",
                                         "children":{
                                             
                                         }
                                     },
                                     "Tactical Dash":{
                                         "desc": "Double tap either up or down to perform a forward or backwards dash.",
+                                        "function": "set tacticalDash True;set tacticalDashDistance 60;set tacticalDashTime 0.4",
                                         "children":{
                                             
                                         }
@@ -32,17 +39,20 @@
                                 }
                             },
                             "Evasion Mode":{
-                                "desc": "On-hit, enter evasion mode for 4 seconds. While in evasion mode, your spin-speed, acceleration, and friction are improved.",
+                                "desc": "On-hit, enter evasion mode for 2 seconds. While in evasion mode, your spin-speed, acceleration, and friction are improved.",
+                                "function": "set evasionMode True;set evasionModeCost 20;set evasionModeMax 20;set evastionModeTime 2; set evastionModeRotation 2;set evastionModeAcceleration 1.5;set evastionModeFriction 3;",
                                 "defaultDescription": "25% longer evasion mode.",
                                 "children":{
                                     "Manual Evasion":{
                                         "desc": "Manually activate evasion mode by pressing forward and back at the same time while the evasion meter is fully charged. Evasion mode no longer activates without a full meter",
+                                        "function": "set manualEvasion True",
                                         "children":{
                                             
                                         }
                                     },
                                     "Tactical Dash":{
                                         "desc": "Double tap either up or down to perform a forward or backwards dash.",
+                                        "function": "set tacticalDash True;set tacticalDashDistance 60;set tacticalDashTime 0.4",
                                         "children":{
                                             
                                         }
@@ -53,20 +63,26 @@
                     },
                     "Super Spinning":{
                         "desc": "Spin at a greatly increased speed.",
-                        "defaultDescription": "20% improved spin & acceleration.",
+                        "function": "multiply rotation 1.6",
+                        "defaultDescription": "20% improved friction & acceleration.",
+                        "defaultFunction": "multiply friction 1.2;multiply acceleration 1.2",
                         "children":{
                             "Afterburners":{
                                 "desc": "Burn fuel to accelerate at super speed. Fuel recharges while not accelerating.",
+                                "function": "set afterburn True;set afterburnBoost 60;set afterburnMax 1",
                                 "defaultDescription": "20% improved afterburn boost.",
+                                "defaultFunction": "multiply afterburnBoost 1.2",
                                 "children":{
                                     "Extra Fuel Tank":{
                                         "desc": "Double your afterburners fuel capacity.",
+                                        "function": "multiply afterburnMax",
                                         "children":{
                                             
                                         }
                                     },
                                     "Initial Dash":{
                                         "desc": "Perform a dash while initially accelerating.",
+                                        "function": "set initialDash True;set initialDashDistance 60;set initialDashTime 0.4",
                                         "children":{
                                             
                                         }
@@ -74,17 +90,20 @@
                                 }
                             },
                             "Evasion Mode":{
-                                "desc": "On-hit, enter evasion mode for 4 seconds. While in evasion mode, your spin-speed, acceleration, and friction are improved.",
+                                "desc": "On-hit, enter evasion mode for 2 seconds. While in evasion mode, your spin-speed, acceleration, and friction are improved.",
+                                "function": "set evasionMode True;set evasionModeCost 20;set evasionModeMax 20;set evastionModeTime 2; set evastionModeRotation 2;set evastionModeAcceleration 1.5;set evastionModeFriction 3;",
                                 "defaultDescription": "25% longer evasion mode.",
                                 "children":{
                                     "Manual Evasion":{
                                         "desc": "Manually activate evasion mode by pressing forward and back at the same time while the evasion meter is fully charged. Evasion mode no longer activates without a full meter",
+                                        "function": "set manualEvasion True;set tacticalDashDistance 60;set tacticalDashTime 0.4",
                                         "children":{
                                             
                                         }
                                     },
                                     "Initial Dash":{
                                         "desc": "Perform a dash while initially accelerating.",
+                                        "function": "set initialDash True;set initialDashDistance 60;set initialDashTime 0.4",
                                         "children":{
                                             
                                         }
@@ -103,9 +122,11 @@
                 ],
                 "defaultDescription": "Your bullets do 30% more damage.",
                 "features":{
-                    "Rapid-Fire":{
-                        "desc": "Double firing speed. Also enable fully automatic fire.",
-                        "defaultDescription": "30% faster fire.",
+                    "Auto-Fire":{
+                        "desc": "Enable fully automatic fire.",
+                        "function": "set autoFire true;set autoFireRate 5",
+                        "defaultDescription": "20% faster fire.",
+                        "defaultFunction": "multiply autoFireRate 1.2",
                         "children":{
                             "Wave-Beam":{
                                 "desc": "Fire 3 bullets at once in a wave.",

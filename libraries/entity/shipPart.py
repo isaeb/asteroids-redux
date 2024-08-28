@@ -32,10 +32,17 @@ class Line:
         scrollOffsetX = - game['scrollX']
         scrollOffsetY = - game['scrollY']
         
-        self.color.a = int(255 - self.progress * 255)
-        pygame.draw.line(game['layers'][self.layer], self.color, 
+        # Create a temporary surface that supports alpha values
+        surface = pygame.Surface(game['screen'].get_size(), pygame.SRCALPHA)
+        surface.set_colorkey((0, 0, 0))
+        surface.fill((0, 0, 0))
+        surface.set_alpha(255 - self.progress * 255)
+
+        pygame.draw.line(surface, self.color, 
                          (int(self.xStart + scrollOffsetX), int(self.yStart + scrollOffsetY)), 
                          (int(self.xEnd + scrollOffsetX), int(self.yEnd + scrollOffsetY)))
+        
+        game['layers'][self.layer].blit(surface, (0, 0))
 
 
     def update(self, game:dict):

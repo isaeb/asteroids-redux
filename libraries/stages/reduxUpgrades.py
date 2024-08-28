@@ -2,6 +2,7 @@ import pygame
 import math
 import json
 
+from libraries.services.drawEffects import renderText
 
 # Opening JSON file
 with open('libraries/upgrades.json') as json_file:
@@ -91,12 +92,16 @@ def draw_wrapped_text(surface, text, font, color, rect):
         lines.append(' '.join(current_line))
 
         for line in lines:
-            line_surf = font.render(line, True, color)
+            startColor = (255, 255, 255)
+            endColor = (200, 200, 200)
+            line_surf = renderText(line, font, startColor, endColor, (50, 50, 50), (3, 3), (0, 0, 0), 1)
             surface.blit(line_surf, (rect.left, y))
-            y += font.get_linesize()
+            if line:
+                y += font.get_linesize()
 
         # Add a newline space
-        y += font.get_linesize()
+        if current_line:
+            y += font.get_linesize()
 
 def draw_player(surface, color, center, size, player):
 
@@ -112,14 +117,16 @@ def draw_player(surface, color, center, size, player):
     pygame.draw.polygon(surface, color, points, width=1)
 
 def drawStars(game, count=3):
-    starSize = game['screenWidth'] * 0.05
+    starSize = game['screenWidth'] * 0.04
     maxStars = 3
+    color = pygame.Color(255, 255, 150)
 
     for c in range(maxStars):
         x = c * (starSize * 2.2) + game['screenWidth'] * 0.2
         y = game['screenHeight'] * 0.2
         if count > c:
-            draw_star(game['screen'], pygame.Color(255, 255, 0, 255), (x, y), starSize)
+            draw_star(game['screen'], (50, 50, 50), (x + 5, y + 5), starSize)
+            draw_star(game['screen'], color, (x, y), starSize)
         else:
             draw_star(game['screen'], pygame.Color(255, 255, 255, 255), (x, y), starSize, width=1)
 
@@ -205,10 +212,10 @@ class ReduxUpgrades:
         self.cornerRadius = game['screenWidth'] * 0.1
 
         self.optionSize = int(menuHeight * 0.08)
-        self.optionFont = pygame.font.Font('fonts/PastiRegular.otf', self.optionSize)
+        self.optionFont = pygame.font.Font('fonts/Signwood.ttf', self.optionSize)
 
         self.descSize = int(menuHeight * 0.05)
-        self.descFont = pygame.font.Font('fonts/PastiRegular.otf', self.descSize)
+        self.descFont = pygame.font.Font('fonts/Signwood.ttf', self.descSize)
 
         self.selected = 0
         self.state = 0
@@ -243,18 +250,11 @@ class ReduxUpgrades:
         x = game['screenWidth'] * 0.7
         y = game['screenHeight'] * 0.15
 
-        for angle in range(8):
-            textSurface = self.optionFont.render(text, True, pygame.Color(0, 0, 0))
-            offsetX = x
-            offsetY = y
-            xx = offsetX + math.cos(math.pi * angle / 4) * thickness
-            yy = offsetY + math.sin(math.pi * angle / 4) * thickness
-            game['screen'].blit(textSurface, (xx, yy))
-
         # Draw the option main text
-        color = (255, 255, 255)
-        textSurface = self.optionFont.render(text, True, color)
-        game['screen'].blit(textSurface, (x, yy))
+        startColor = (255, 255, 255)
+        endColor = (200, 200, 200)
+        textSurface = renderText(text, self.optionFont, startColor, endColor, (50, 50, 50), (3, 3), (0, 0, 0), 1)
+        game['screen'].blit(textSurface, (x, y))
 
         if self.state == 0:
             r = self.updateControl(game)
@@ -299,8 +299,9 @@ class ReduxUpgrades:
                 game['screen'].blit(textSurface, (xx, yy))
 
             # Draw the option main text
-            color = (255, 255, 255)
-            textSurface = self.optionFont.render(text, True, color)
+            startColor = (255, 255, 255)
+            endColor = (200, 200, 200)
+            textSurface = renderText(text, self.optionFont, startColor, endColor, (50, 50, 50), (3, 3), (0, 0, 0), 1)
             yy = y + thickness + i * (self.optionSize + thickness * 2)
             game['screen'].blit(textSurface, (x, yy))
 
@@ -314,8 +315,9 @@ class ReduxUpgrades:
                 game['screen'].blit(textSurface, (xx, yy))
 
             # Draw the level main text
-            color = (255, 255, 255)
-            textSurface = self.optionFont.render(f'LVL{levels[i]}', True, color)
+            startColor = (255, 255, 255)
+            endColor = (200, 200, 200)
+            textSurface = renderText(f'LVL{levels[i]}', self.optionFont, startColor, endColor, (50, 50, 50), (3, 3), (0, 0, 0), 1)
             yy = y + thickness + i * (self.optionSize + thickness * 2)
             game['screen'].blit(textSurface, (lvlx, yy))
 
@@ -343,8 +345,9 @@ class ReduxUpgrades:
                 game['screen'].blit(textSurface, (xx, yy))
 
             # Draw the option main text
-            color = (255, 255, 255)
-            textSurface = self.optionFont.render(text, True, color)
+            startColor = (255, 255, 255)
+            endColor = (200, 200, 200)
+            textSurface = renderText(text, self.optionFont, startColor, endColor, (50, 50, 50), (3, 3), (0, 0, 0), 1)
             yy = y + thickness + i * (self.optionSize + thickness * 2)
             game['screen'].blit(textSurface, (x, yy))
 
@@ -395,6 +398,7 @@ class ConfirmMenu:
         self.selected = 0
         self.category = category
         self.desc = findDesc(game, category)
+        self.midX = 0
         if len(self.desc) > 1:
             self.options = []
             for option in self.desc:
@@ -413,8 +417,9 @@ class ConfirmMenu:
         self.cornerRadius = game['screenWidth'] * 0.1
 
         self.optionSize = int(game['screenHeight'] * 0.08)
-        self.optionFont = pygame.font.Font('fonts/PastiRegular.otf', self.optionSize)
+        self.optionFont = pygame.font.Font('fonts/Signwood.ttf', self.optionSize)
 
+        '''
         # Calibrate option size
         while True:
             newOptionSize = self.optionSize
@@ -425,12 +430,13 @@ class ConfirmMenu:
             
             if newOptionSize < self.optionSize:
                 self.optionSize = newOptionSize
-                self.optionFont = pygame.font.Font('fonts/PastiRegular.otf', self.optionSize)
+                self.optionFont = pygame.font.Font('fonts/Signwood.ttf', self.optionSize)
             else:
                 break
+        '''
 
-        self.descSize = int(game['screenHeight'] * 0.05)
-        self.descFont = pygame.font.Font('fonts/PastiRegular.otf', self.descSize)
+        self.descSize = int(game['screenHeight'] * 0.06)
+        self.descFont = pygame.font.Font('fonts/Signwood.ttf', self.descSize)
     
     def drawOptions(self, game):
         pointerSize = game['screenWidth'] * 0.015
@@ -451,15 +457,17 @@ class ConfirmMenu:
                 game['screen'].blit(textSurface, (xx, yy))
 
             # Draw the option main text
-            color = (255, 255, 255)
-            textSurface = self.optionFont.render(text, True, color)
+            startColor = (255, 255, 255)
+            endColor = (200, 200, 200)
+            textSurface = renderText(text, self.optionFont, startColor, endColor, (50, 50, 50), (3, 3), (0, 0, 0), 1)
+            self.midX = max(self.midX, textSurface.get_width())
             yy = y + thickness + i * (self.optionSize + thickness * 2) * 1.2
             game['screen'].blit(textSurface, (x, yy))
 
             
             if i == self.selected:
                 # Draw Pointer
-                draw_pointer(game['screen'], pygame.Color(255, 255, 255), (x - pointerSize - 5, yy + self.optionSize * 0.45), pointerSize)
+                draw_pointer(game['screen'], pygame.Color(255, 255, 255), (x - pointerSize - 5, yy + self.optionSize * 0.65), pointerSize)
 
                 # Draw desc
                 if len(self.desc) <= i:
@@ -467,7 +475,7 @@ class ConfirmMenu:
                 
                 text = self.desc[i]['desc']
                 
-                rect = pygame.Rect(game['screenWidth'] * 0.5, game['screenHeight'] * 0.35, game['screenWidth'] * 0.4, game['screenHeight'] * 0.3)
+                rect = pygame.Rect(x * 1.2 + self.midX, game['screenHeight'] * 0.355, game['screenWidth'] * 0.8 - (x * 1.2 + self.midX), game['screenHeight'] * 0.3)
                 draw_wrapped_text(game['screen'], text, self.descFont, (255, 255, 255), rect)
 
     def updateControl(self, game):
@@ -532,7 +540,7 @@ class NoStarMenu:
         self.cornerRadius = game['screenWidth'] * 0.1
 
         self.descSize = int(game['screenHeight'] * 0.10)
-        self.descFont = pygame.font.Font('fonts/PastiRegular.otf', self.descSize)
+        self.descFont = pygame.font.Font('fonts/Signwood.ttf', self.descSize)
     
     def drawOptions(self, game):
         x = game['screenWidth'] * 0.12

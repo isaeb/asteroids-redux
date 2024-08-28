@@ -4,16 +4,14 @@ import platform
 import json
 import sys
 from typing import Literal
-from urllib.parse import urlencode
-
-import pygame
 
 
 JS_CODE = """
 async function makeRequest() {
   const fetch_args = {
     method: <|REQUEST_TYPE|>, // <|ARG|> format used for Python string.replace() 
-    headers: <|HEADERS|>
+    headers: <|HEADERS|>,
+    body: <|BODY|>
     };
 
   const response = await fetch(<|URL|>, fetch_args);
@@ -75,7 +73,7 @@ class RequestHandler:
                 "params": params,
             }
             if body:
-                kwargs["json"] = body
+                kwargs["data"] = body
 
             try:
                 response = await self._httpx_client.request(**kwargs)
@@ -87,13 +85,14 @@ class RequestHandler:
         if self._request_task and self._request_task.done():
             if self._is_web:
                 if response := self._window.response:
+                    self._window.response = None
                     return response
                     return json.dumps(ast.literal_eval(str(response)), indent=4)
             else:
                 return self._httpx_response
 
     async def post(
-        self, url: str, headers: dict = {''}, params: dict = {''}, body: dict = None
+        self, url: str, headers: dict = {''}, params: dict = None, body: dict = None
     ):
         self._request_task = asyncio.create_task(
             self._make_request("POST", url, headers, params, body)

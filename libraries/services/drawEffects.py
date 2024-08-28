@@ -59,7 +59,7 @@ def render_text_with_outline(text, font, text_color, outline_color, outline_widt
     return outline_surface
 
 # Function to render text with gradient, drop shadow, and outline
-def renderText(text, font, start_color, end_color, shadow_color, shadow_offset, outline_color, outline_width):
+def renderText(text, font, start_color, end_color, shadow_color, shadow_offset, outline_color=(0, 0, 0), outline_width=0):
     # Render text surface
     text_surface = font.render(text, True, (255, 255, 255))
     width, height = text_surface.get_size()

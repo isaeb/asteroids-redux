@@ -7,7 +7,6 @@ Module providing main functions
 # dependencies = [
 #   "numpy",
 #   "asyncio",
-#   "pyaes",
 #   "webbrowser",
 #   "json",
 #   "base64",
@@ -23,6 +22,7 @@ from libraries.stages.classic import Classic
 from libraries.stages.gameover import Gameover
 from libraries.services.ngio import NGIO
 from libraries.stages.redux import Redux
+from libraries.stages.leaderboards import Leaderboards
 
 
 def initGame():
@@ -30,8 +30,8 @@ def initGame():
         'NGIO': NGIO(),
         'screenWidth': 640,
         'screenHeight': 480,
-        'gameWidth': 1280,
-        'gameHeight': 960,
+        'gameWidth': 640,
+        'gameHeight': 480,
         'scrollX': 0,
         'scrollY': 0,
         'frametime': 0,
@@ -53,8 +53,15 @@ async def main():
 
     # Variables
     pygame.init()
+    pygame.display.set_caption('Asteroids: Redux')
     clock = pygame.time.Clock()
     game = initGame()
+
+    # NGIO
+    if game['NGIO'].sessionID is not None:
+        await game['NGIO'].checkSessionLogin()
+    else:
+        await game['NGIO'].newSession()
 
     # Create Background
     game['background'].fill((0, 0, 0))
@@ -77,10 +84,11 @@ async def main():
         update = await stage.update(game)
         
         if type(update) is str:
-            stage = {"Title": Title, 
-                     "Classic": Classic, 
-                     "Gameover": Gameover,
-                     'Redux': Redux}[update](game)
+            stage = {'Title': Title, 
+                     'Classic': Classic, 
+                     'Gameover': Gameover,
+                     'Redux': Redux,
+                     'Leaderboards': Leaderboards}[update](game)
 
         # Update the Async IO
         await asyncio.sleep(0)

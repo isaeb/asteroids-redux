@@ -4,6 +4,7 @@ import math
 from libraries.entity.asteroid import Asteroid
 from libraries.entity.player import Player
 from libraries.entity.ufo import UFO
+from libraries.entity.reduxEnemy.ufo import UFO as rUFO
 
 from libraries.entity.reduxEnemy.satellite import Satellite
 from libraries.entity.reduxEnemy.turret import Turret
@@ -94,6 +95,31 @@ def spawnReduxTurret(game:dict, player:Player=None, spawnRange=80):
                         loop = True
 
     game['enemies'].append(Turret(aX, aY, TURRET_SIZE))
+
+def spawnReduxUFO(game:dict, player:Player=None, spawnRange=80):
+    """
+    Args:
+        game (dict): The game dict
+        player (Player): A Player object
+    """
+
+    if player is None:
+        aX = random() * game['gameWidth']
+        aY = random() * game['gameHeight']
+    else:
+        loop = True
+        while loop:
+            loop = False
+            aX = random() * game['gameWidth']
+            aY = random() * game['gameHeight']
+            for x in range(-1, 1):
+                for y in range(-1, 1):
+                    pX = player.x + x * game['gameWidth']
+                    pY = player.y + y * game['gameHeight']
+                    if math.sqrt(abs(aX - pX) ** 2 + abs(aY - pY) ** 2) < spawnRange:
+                        loop = True
+
+    game['enemies'].append(rUFO(aX, aY, UFO_SIZE, REDUX_UFO_SPEED, health=3))
 
 
 def spawnUFO(game:dict, speed:float):

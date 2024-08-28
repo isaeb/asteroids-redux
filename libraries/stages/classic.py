@@ -1,6 +1,9 @@
 import pygame
+import numpy
 import libraries.services.spawn as spawn
-import libraries.constants as constants
+
+
+from libraries.constants import *
 
 from libraries.entity.player import Player
 from libraries.entity.ufo import UFO
@@ -8,10 +11,11 @@ from libraries.entity.ufo import UFO
 
 class Classic:
     def __init__(self, game:dict):
+        game['last'] = 'Classic'
         game['lives'] = 1
 
         # Create Player
-        game['players'] = [Player(320, 240, 0, constants.PLAYER_SIZE)]
+        game['players'] = [Player(320, 240, 0, PLAYER_SIZE)]
 
         game['bullets'] = []
         game['asteroids'] = []
@@ -25,6 +29,18 @@ class Classic:
         game['scrollX'] = 0
         game['scrollY'] = 0
         game['bulletWrap'] = False
+
+        # Clear background
+        game['background'].fill((0, 0, 0))
+
+        # Generate points
+        starCount = 60
+        starX = numpy.random.uniform(0, game['screenWidth'], starCount)
+        starY = numpy.random.uniform(0, game['screenHeight'], starCount)
+
+        # Draw points
+        for index in range(starCount):
+            pygame.draw.circle(game['background'], pygame.Color(255, 255, 255), (starX[index], starY[index]), 1)
 
         # Set up gui
         self.scoreSize = game['screenHeight'] * 0.1
@@ -51,7 +67,7 @@ class Classic:
         
         self.progress += game['frametime'] / 1000
         if self.progress >= self.spawnTick:
-            spawn.spawnUFO(game, min(constants.UFO_SPEED + self.level * 4, constants.UFO_MAX_SPEED))
+            spawn.spawnUFO(game, min(UFO_SPEED + self.level * 4, UFO_MAX_SPEED))
             self.enemyCount += 1
             self.progress -= self.spawnTick
 
@@ -110,6 +126,9 @@ class Classic:
 
         # Gameover
         if len(game['shipParts']) == 0 and len(game['players']) == 0:
+            game['score'] = self.score
+            if game['NGIO'].loggedIn:
+                game['NGIO'].postScore(CLASSIC_ID, self.score)
             return 'Gameover'
 
     def updateGui(self):
