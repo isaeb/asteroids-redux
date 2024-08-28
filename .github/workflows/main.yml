@@ -28,7 +28,10 @@ jobs:
 
     - name: Build Webapp
       run: |
-        pygbag main.py
+        pygbag main.py &
+        APP_PID=$!
+        sleep 5
+        kill $APP_PID
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v4
