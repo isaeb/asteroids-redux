@@ -92,8 +92,8 @@ def draw_wrapped_text(surface, text, font, color, rect):
         lines.append(' '.join(current_line))
 
         for line in lines:
-            startColor = (255, 255, 255)
-            endColor = (200, 200, 200)
+            startColor = (220, 220, 220)
+            endColor = (120, 120, 120)
             line_surf = renderText(line, font, startColor, endColor, (50, 50, 50), (3, 3), (0, 0, 0), 1)
             surface.blit(line_surf, (rect.left, y))
             if line:
@@ -245,14 +245,13 @@ class ReduxUpgrades:
         self.drawOptions(game)
 
         # Draw class name
-        thickness = 1
         text = game['class'].capitalize()
         x = game['screenWidth'] * 0.7
         y = game['screenHeight'] * 0.15
 
         # Draw the option main text
-        startColor = (255, 255, 255)
-        endColor = (200, 200, 200)
+        startColor = (220, 220, 220)
+        endColor = (120, 120, 120)
         textSurface = renderText(text, self.optionFont, startColor, endColor, (50, 50, 50), (3, 3), (0, 0, 0), 1)
         game['screen'].blit(textSurface, (x, y))
 
@@ -299,8 +298,12 @@ class ReduxUpgrades:
                 game['screen'].blit(textSurface, (xx, yy))
 
             # Draw the option main text
-            startColor = (255, 255, 255)
-            endColor = (200, 200, 200)
+            if self.selected == i:
+                startColor = (220, 220, 220)
+                endColor = (120, 120, 120)
+            else:
+                startColor = (100, 100, 100)
+                endColor = (50, 50, 50)
             textSurface = renderText(text, self.optionFont, startColor, endColor, (50, 50, 50), (3, 3), (0, 0, 0), 1)
             yy = y + thickness + i * (self.optionSize + thickness * 2)
             game['screen'].blit(textSurface, (x, yy))
@@ -315,8 +318,8 @@ class ReduxUpgrades:
                 game['screen'].blit(textSurface, (xx, yy))
 
             # Draw the level main text
-            startColor = (255, 255, 255)
-            endColor = (200, 200, 200)
+            startColor = (100, 100, 100)
+            endColor = (50, 50, 50)
             textSurface = renderText(f'LVL{levels[i]}', self.optionFont, startColor, endColor, (50, 50, 50), (3, 3), (0, 0, 0), 1)
             yy = y + thickness + i * (self.optionSize + thickness * 2)
             game['screen'].blit(textSurface, (lvlx, yy))
@@ -324,7 +327,7 @@ class ReduxUpgrades:
             
             if i == self.selected:
                 # Draw Pointer
-                draw_pointer(game['screen'], pygame.Color(255, 255, 255), (x - pointerSize - 5, yy + self.optionSize * 0.45), pointerSize)
+                #draw_pointer(game['screen'], pygame.Color(255, 255, 255), (x - pointerSize - 5, yy + self.optionSize * 0.45), pointerSize)
 
                 # Draw description
                 drawDescription(game, text.lower(), levels[i], self.descFont)
@@ -345,15 +348,19 @@ class ReduxUpgrades:
                 game['screen'].blit(textSurface, (xx, yy))
 
             # Draw the option main text
-            startColor = (255, 255, 255)
-            endColor = (200, 200, 200)
+            if i == self.selected:
+                startColor = (220, 220, 220)
+                endColor = (120, 120, 120)
+            else:
+                startColor = (100, 100, 100)
+                endColor = (50, 50, 50)
             textSurface = renderText(text, self.optionFont, startColor, endColor, (50, 50, 50), (3, 3), (0, 0, 0), 1)
             yy = y + thickness + i * (self.optionSize + thickness * 2)
             game['screen'].blit(textSurface, (x, yy))
 
             # Draw Pointer
-            if i == self.selected:
-                draw_pointer(game['screen'], pygame.Color(255, 255, 255), (x - pointerSize - 5, yy + self.optionSize * 0.45), pointerSize)
+            #if i == self.selected:
+                #draw_pointer(game['screen'], pygame.Color(255, 255, 255), (x - pointerSize - 5, yy + self.optionSize * 0.45), pointerSize)
 
     def updateControl(self, game):
         # Get player input
@@ -457,8 +464,8 @@ class ConfirmMenu:
                 game['screen'].blit(textSurface, (xx, yy))
 
             # Draw the option main text
-            startColor = (255, 255, 255)
-            endColor = (200, 200, 200)
+            startColor = (220, 220, 220)
+            endColor = (120, 120, 120)
             textSurface = renderText(text, self.optionFont, startColor, endColor, (50, 50, 50), (3, 3), (0, 0, 0), 1)
             self.midX = max(self.midX, textSurface.get_width())
             yy = y + thickness + i * (self.optionSize + thickness * 2) * 1.2

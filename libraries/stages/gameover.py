@@ -169,11 +169,11 @@ class Gameover:
         y = self.sY + self.scoreSurface.get_height() * 2
         for index, key in enumerate(self.options.keys()):
             if index == self.selected:
-                startColor = (255, 255, 255)
-                endColor = (200, 200, 200)
+                startColor = (220, 220, 220)
+                endColor = (120, 120, 120)
             else:
-                startColor = (150, 150, 150)
-                endColor = (100, 100, 100)
+                startColor = (100, 100, 100)
+                endColor = (50, 50, 50)
             textSurface = renderText(key, font, startColor, endColor, shadowColor, (3, 3))
             x = width / 2 - textSurface.get_width() / 2
             self.optionSurface.blit(textSurface, (x, y))

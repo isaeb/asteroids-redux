@@ -142,23 +142,14 @@ class Redux:
             color = pygame.Color(16 + r * 16, r * 20, r * 10)
             spawn.spawnAsteroid(game, player=game['players'][0], spawnRange=160, color=color)
 
-        for _ in range(7):
-            spawn.spawnReduxTurret(game, player=game['players'][0], spawnRange=160)
-
-        for _ in range(10):
-            spawn.spawnReduxSatellite(game, player=game['players'][0], spawnRange=160)
-        
-        for _ in range(3):
-            spawn.spawnReduxUFO(game, player=game['players'][0], spawnRange=160)
+        for _ in range(5):
+            spawn.spawnReduxUFO(game, player=game['players'][0], spawnRange=160, health=1)
 
     async def update(self, game:dict):
         if self.state == 'gameplay':
             if len(game['players']) > 0:
-                while len(game['enemies']) < 20:
-                    if random() * 2 >= 1:
-                        spawn.spawnReduxTurret(game, player=game['players'][0], spawnRange=game['screenWidth'] * 0.75)
-                    else:
-                        spawn.spawnReduxSatellite(game, player=game['players'][0], spawnRange=game['screenWidth'] * 0.75)
+                while len(game['enemies']) < 5:
+                    spawn.spawnReduxUFO(game, player=game['players'][0], spawnRange=160, health=1)
                 while len(game['asteroids']) < 20:
                     r = random()
                     color = pygame.Color(16 + r * 16, r * 20, r * 10)

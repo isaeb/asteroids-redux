@@ -96,7 +96,7 @@ def spawnReduxTurret(game:dict, player:Player=None, spawnRange=80):
 
     game['enemies'].append(Turret(aX, aY, TURRET_SIZE))
 
-def spawnReduxUFO(game:dict, player:Player=None, spawnRange=80):
+def spawnReduxUFO(game:dict, player:Player=None, spawnRange=80, health=2):
     """
     Args:
         game (dict): The game dict
@@ -119,7 +119,7 @@ def spawnReduxUFO(game:dict, player:Player=None, spawnRange=80):
                     if math.sqrt(abs(aX - pX) ** 2 + abs(aY - pY) ** 2) < spawnRange:
                         loop = True
 
-    game['enemies'].append(rUFO(aX, aY, UFO_SIZE, REDUX_UFO_SPEED, health=3))
+    game['enemies'].append(rUFO(aX, aY, UFO_SIZE, REDUX_UFO_SPEED, health=health))
 
 
 def spawnUFO(game:dict, speed:float):

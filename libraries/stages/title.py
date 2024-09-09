@@ -187,11 +187,11 @@ class Title:
                 continue
 
             # Draw the option main text
-            startColor = (150, 150, 150)
-            endColor = (100, 100, 100)
+            startColor = (100, 100, 100)
+            endColor = (50, 50, 50)
             if index == self.selected:
-                startColor = (255, 255, 255)
-                endColor = (200, 200, 200)
+                startColor = (220, 220, 220)
+                endColor = (120, 120, 120)
 
             font = self.optionFont
             textSurface = renderText(key, font, startColor, endColor, (50, 50, 50), (3, 3), (0, 0, 0), 2)
