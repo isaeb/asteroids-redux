@@ -56,13 +56,7 @@ async def main():
     pygame.display.set_caption('Asteroids: Redux')
     clock = pygame.time.Clock()
     game = initGame()
-
-    # NGIO
-    if game['NGIO'].sessionID is not None:
-        await game['NGIO'].checkSessionLogin()
-    else:
-        await game['NGIO'].newSession()
-
+    
     # Create Background
     game['background'].fill((0, 0, 0))
     

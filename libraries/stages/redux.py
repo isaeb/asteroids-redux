@@ -43,6 +43,10 @@ class Redux:
         self.targetScore = 100
         self.cooldown = maxCooldown
 
+        # Upgrades
+        self.afterburn = False
+        self.evasionMode = False
+
         # Fonts
         self.missionFont = pygame.font.Font('fonts/SignwoodItalic.ttf', int(game['screenHeight'] * 0.1))
         self.missionColor = pygame.Color(255, 0, 0)
@@ -55,6 +59,9 @@ class Redux:
 
         self.ammoFont = pygame.font.Font('fonts/SignwoodItalic.ttf', int(game['screenHeight'] * 0.05))
         self.ammoColor = pygame.Color(200, 200, 200)
+
+        self.guiFont = pygame.font.Font('fonts/SignwoodItalic.ttf', int(game['screenHeight'] * 0.05))
+        self.guiColor = pygame.Color(200, 200, 200)
 
         self.timerFont = pygame.font.Font('fonts/Signwood.ttf', int(game['screenHeight'] * 0.12))
         
@@ -72,27 +79,6 @@ class Redux:
         self.fadeoutSurf.fill((0, 0, 0))
         self.guiAlpha = 1
 
-        # New level
-        self.newLevel(game)
-
-        # Special
-        yOffset = self.healthFont.render('HEALTH', True, self.healthColor).get_height() * 1.5
-        specialWidth = game['screenWidth'] * 0.1
-        specialHeight = game['screenHeight'] * 0.02
-        x = game['screenWidth'] * 0.03
-        y = game['screenHeight'] * 0.04 + yOffset
-        progressFunction = lambda game: game['players'][0].specialCharge / game['players'][0].specialMaxCharge
-        self.guiModules.append(ReduxGuiBar(x, y, specialWidth, specialHeight, self.specialFont, self.specialColor, game['players'][0].specialName, pygame.Color(200, 255, 200), pygame.Color(200, 255, 200), progressFunction))
-
-        # Ammo
-        yOffset += self.specialFont.render(game['players'][0].specialName, True, self.healthColor).get_height() + specialHeight
-        ammoWidth = game['screenWidth'] * 0.1
-        ammoHeight = game['screenHeight'] * 0.02
-        x = game['screenWidth'] * 0.03
-        y = game['screenHeight'] * 0.04 + yOffset
-        progressFunction = lambda game:  (game['players'][0].maxBullets - len(game['bullets'])) / game['players'][0].maxBullets
-        self.guiModules.append(ReduxGuiBar(x, y, ammoWidth, ammoHeight, self.ammoFont, self.ammoColor, 'AMMO', pygame.Color(200, 255, 200), pygame.Color(200, 255, 200), progressFunction))
-
         self.state = 'gameplay'
         self.upgradeObject = ReduxUpgrades(game)
         self.resultsObject = ReduxResults(game)
@@ -109,6 +95,9 @@ class Redux:
         # Stats
         self.asteroidsDestroyed = 0
         self.enemiesDestroyed = 0
+
+        # New level
+        self.newLevel(game)
 
     def newLevel(self, game:dict):
         self.enemyCount = len(game['enemies'])
@@ -130,6 +119,28 @@ class Redux:
         # Create Player
         game['players'] = [Player(320, 240, 0, PLAYER_SIZE)]
         game['players'][0].updateStats(game)
+
+        self.guiModules = []
+
+        # Special
+        yOffset = self.healthFont.render('HEALTH', True, self.healthColor).get_height() * 1.5
+        specialWidth = game['screenWidth'] * 0.1
+        specialHeight = game['screenHeight'] * 0.02
+        x = game['screenWidth'] * 0.03
+        y = game['screenHeight'] * 0.04 + yOffset
+        progressFunction = lambda game: game['players'][0].specialCharge / game['players'][0].specialMaxCharge
+        self.guiModules.append(ReduxGuiBar(x, y, specialWidth, specialHeight, self.specialFont, self.specialColor, game['players'][0].specialName, pygame.Color(200, 255, 200), pygame.Color(200, 255, 200), progressFunction))
+
+        # Ammo
+        yOffset += self.specialFont.render(game['players'][0].specialName, True, self.healthColor).get_height() + specialHeight
+        ammoWidth = game['screenWidth'] * 0.1
+        ammoHeight = game['screenHeight'] * 0.02
+        x = game['screenWidth'] * 0.03
+        y = game['screenHeight'] * 0.04 + yOffset
+        progressFunction = lambda game:  (game['players'][0].maxBullets - len(game['bullets'])) / game['players'][0].maxBullets
+        self.guiModules.append(ReduxGuiBar(x, y, ammoWidth, ammoHeight, self.ammoFont, self.ammoColor, 'AMMO', pygame.Color(200, 255, 200), pygame.Color(200, 255, 200), progressFunction))
+
+        self.updateUpgrades(game)
 
         # Generate points
         starCount = 480
@@ -279,6 +290,7 @@ class Redux:
             r = self.upgradeObject.update(game)
             if r is not None:
                 if r:
+                    self.updateUpgrades(game)
                     self.cooldown = 1
 
             if self.cooldown > 0:
@@ -408,6 +420,39 @@ class Redux:
             progress = player.health / player.maxHealth
         margin = 4
         pygame.draw.rect(self.guiSurface, scoreBarColor, pygame.Rect(x + margin, y + margin, (self.healthLength - margin * 2) * progress, healthHeight * 0.4 - margin * 2))
+
+    def updateUpgrades(self, game:dict):
+        print('updating gui')
+        if len(game['players']) == 0:
+            return
+        
+        player = game['players'][0]
+
+        if not self.afterburn and player.afterburn:
+            self.afterburn = True
+            x = game['screenWidth'] * 0.03
+            y = game['screenHeight'] * 0.04
+            length = len(self.guiModules)
+            if len(self.guiModules) > 0:
+                m = self.guiModules[length - 1]
+                y = m.y + m.font.render(m.text, True, (0, 0, 0)).get_height() * 1.5
+            width = game['screenWidth'] * 0.1
+            height = game['screenHeight'] * 0.02
+            progressFunction = lambda game: game['players'][0].afterburnCharge / game['players'][0].afterburnMax
+            self.guiModules.append(ReduxGuiBar(x, y, width, height, self.guiFont, self.guiColor, 'Afterburners', pygame.Color(200, 255, 200), pygame.Color(200, 255, 200), progressFunction))
+
+        if not self.evasionMode and player.evasionMode:
+            self.evasionMode = True
+            x = game['screenWidth'] * 0.03
+            y = game['screenHeight'] * 0.04
+            length = len(self.guiModules)
+            if len(self.guiModules) > 0:
+                m = self.guiModules[length - 1]
+                y = m.y + m.font.render(m.text, True, (0, 0, 0)).get_height() * 1.5
+            width = game['screenWidth'] * 0.1
+            height = game['screenHeight'] * 0.02
+            progressFunction = lambda game: (game['players'][0].evasionModeCharge + game['players'][0].evasionModeActive * game['players'][0].evasionModeCost / game['players'][0].evasionModeDuration) / game['players'][0].evasionModeMax
+            self.guiModules.append(ReduxGuiBar(x, y, width, height, self.guiFont, self.guiColor, 'Evasion', pygame.Color(200, 255, 200), pygame.Color(200, 255, 200), progressFunction))
 
 def drawStars(surf:pygame.Surface, points:list, game:dict):
 
