@@ -4,3 +4,4 @@ venv
 build
 
 !requirements.txt
+!requirements-pygbag.txt

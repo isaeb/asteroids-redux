@@ -58,6 +58,7 @@ class NGIO:
                                 }
             """)
             self.sessionID = platform.window.getIframeVariable('ngio_session_id')
+            self.checkSessionLogin()
 
     async def login(self):
         if self.passportURL is None:

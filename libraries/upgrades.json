@@ -12,26 +12,26 @@
                 "features":{
                     "Reverse Thrusters":{
                         "desc": "Accelerate in reverse by pressing down.",
-                        "function": "set reverse 80",
-                        "defaultDescription": "20% improved friction.",
-                        "defaultFunction": "multiply friction 1.2",
+                        "function": "set reverse 120",
+                        "defaultDescription": "30% improved friction.",
+                        "defaultFunction": "multiply friction 1.3",
                         "children":{
                             "Afterburners":{
                                 "desc": "Burn fuel to accelerate at super speed. Fuel recharges while not accelerating.",
-                                "function": "set afterburn True;set afterburnBoost 60;set afterburnMax 1",
+                                "function": "set afterburn True;set afterburnBoost 2;set afterburnMax 4;set afterburnCost 4;set afterburnMaxCooldown 1",
                                 "defaultDescription": "20% improved afterburn boost.",
                                 "defaultFunction": "multiply afterburnBoost 1.2",
                                 "children":{
                                     "Extra Fuel Tank":{
                                         "desc": "Double your afterburners fuel capacity.",
-                                        "function": "multiply afterburnMax 2",
+                                        "function": "multiply afterburnCost 0.5",
                                         "children":{
                                             
                                         }
                                     },
                                     "Tactical Dash":{
                                         "desc": "Double tap either up or down to perform a forward or backwards dash.",
-                                        "function": "set tacticalDash True;set tacticalDashDistance 60;set tacticalDashTime 0.4",
+                                        "function": "set tacticalDash True;set tacticalDashDistance 100;set tacticalDashSpeed 400",
                                         "children":{
                                             
                                         }
@@ -40,7 +40,7 @@
                             },
                             "Evasion Mode":{
                                 "desc": "On-hit, enter evasion mode for 2 seconds. While in evasion mode, your spin-speed, acceleration, and friction are improved.",
-                                "function": "set evasionMode True;set evasionModeCost 20;set evasionModeMax 20;set evastionModeTime 2; set evastionModeRotation 2;set evastionModeAcceleration 1.5;set evastionModeFriction 3;",
+                                "function": "set evasionMode True;set evasionModeCost 10;set evasionModeMax 10;set evastionModeDuration 3; set evastionModeRotation 1.2;set evastionModeAcceleration 3;set evastionModeFriction 5;",
                                 "defaultDescription": "25% longer evasion mode.",
                                 "children":{
                                     "Manual Evasion":{
@@ -52,7 +52,7 @@
                                     },
                                     "Tactical Dash":{
                                         "desc": "Double tap either up or down to perform a forward or backwards dash.",
-                                        "function": "set tacticalDash True;set tacticalDashDistance 60;set tacticalDashTime 0.4",
+                                        "function": "set tacticalDash True;set tacticalDashDistance 100;set tacticalDashSpeed 400",
                                         "children":{
                                             
                                         }
@@ -69,20 +69,20 @@
                         "children":{
                             "Afterburners":{
                                 "desc": "Burn fuel to accelerate at super speed. Fuel recharges while not accelerating.",
-                                "function": "set afterburn True;set afterburnBoost 60;set afterburnMax 1",
+                                "function": "set afterburn True;set afterburnBoost 2;set afterburnMax 4;set afterburnCost 4;set afterburnMaxCooldown 1",
                                 "defaultDescription": "20% improved afterburn boost.",
                                 "defaultFunction": "multiply afterburnBoost 1.2",
                                 "children":{
                                     "Extra Fuel Tank":{
                                         "desc": "Double your afterburners fuel capacity.",
-                                        "function": "multiply afterburnMax",
+                                        "function": "multiply afterburnCost 0.5",
                                         "children":{
                                             
                                         }
                                     },
                                     "Initial Dash":{
                                         "desc": "Perform a dash while initially accelerating.",
-                                        "function": "set initialDash True;set initialDashDistance 60;set initialDashTime 0.4",
+                                        "function": "set initialDash True;set initialDashDistance 100;set initialDashSpeed 400",
                                         "children":{
                                             
                                         }
@@ -91,7 +91,7 @@
                             },
                             "Evasion Mode":{
                                 "desc": "On-hit, enter evasion mode for 2 seconds. While in evasion mode, your spin-speed, acceleration, and friction are improved.",
-                                "function": "set evasionMode True;set evasionModeCost 20;set evasionModeMax 20;set evastionModeTime 2; set evastionModeRotation 2;set evastionModeAcceleration 1.5;set evastionModeFriction 3;",
+                                "function": "set evasionMode True;set evasionModeCost 10;set evasionModeMax 10;set evastionModeDuration 3; set evastionModeRotation 1.2;set evastionModeAcceleration 3;set evastionModeFriction 5;",
                                 "defaultDescription": "25% longer evasion mode.",
                                 "children":{
                                     "Manual Evasion":{
@@ -103,7 +103,7 @@
                                     },
                                     "Initial Dash":{
                                         "desc": "Perform a dash while initially accelerating.",
-                                        "function": "set initialDash True;set initialDashDistance 60;set initialDashTime 0.4",
+                                        "function": "set initialDash True;set initialDashDistance 100;set initialDashSpeed 400",
                                         "children":{
                                             
                                         }

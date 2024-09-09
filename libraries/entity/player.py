@@ -3,7 +3,6 @@ Module providing a class for the player character
 """
 import pygame
 import math
-import random
 
 import libraries.services.polygon as polygon
 import libraries.services.effects as effects
@@ -12,9 +11,15 @@ from libraries.entity.projectile import Bullet
 from libraries.entity.particle import Particle
 from libraries.entity.shipPart import Line
 from libraries.constants import *
+from libraries.services.specialFunctions import *
+
+from random import random
 
 import json
 
+
+lastPressed = {pygame.K_UP: 0, pygame.K_DOWN: 0, pygame.K_LEFT: 0, pygame.K_RIGHT: 0}
+doubleTapRange = 0.11
 
 playerShape = [(0, 1), (math.pi * 0.75, 1), (math.pi, 0.25), (math.pi * 1.25, 1)]
 
@@ -47,9 +52,13 @@ class Player:
 
         self.maxHealth = 1
         self.health = 1
+
         self.specialName = ''
-        self.specialCharge = 0
+        self.specialCharge = 1
         self.specialMaxCharge = 1
+        self.specialCost = 1
+        self.specialFunction = lambda: print('no special function assigned')
+        self.specialState = False
 
         self.enabled = True
 
@@ -67,27 +76,38 @@ class Player:
 
         # Afterburn
         self.afterburn = False
+        self.afterburnCharge = 999
         self.afterburnBoost = 0
+        self.afterburnCost = 0
         self.afterburnMax = 0
-
-        # Tactical Dash
-        self.tacticalDash = False
-        self.tacticalDashDistance = 60
-        self.tacticalDashTime = 0.4
+        self.afterburnCooldown = 0
+        self.afterburnMaxCooldown = 0
 
         # Evasion Mode
         self.evasionMode = False
-        self.evasionModeCost = 0
-        self.evasionModeMax = 0
-        self.evasionModeRotation = 0
-        self.evasionModeAcceleration = 0
-        self.evasionModeFriction = 0
+        self.evasionModeActive = 0
+        self.evasionModeDuration = 3
+        self.evasionModeCharge = 10
+        self.evasionModeCost = 10
+        self.evasionModeMax = 10
+        self.evasionModeRotation = 1.2
+        self.evasionModeAcceleration = 3
+        self.evasionModeFriction = 5
         self.manualEvasion = False
 
         # Initial Dash
         self.initialDash = False
-        self.initialDashDistance = 0
-        self.initialDashTime = 0
+        self.initialDashDistance = 100
+        self.initialDashSpeed = 400
+
+        # Tactical Dash
+        self.tacticalDash = False
+        self.tacticalDashDistance = 60
+        self.tacticalDashSpeed = 240
+
+        # Dashing (general)
+        self.dashX = 0
+        self.dashY = 0
  
     def draw(self, game:dict):
         """
@@ -127,10 +147,35 @@ class Player:
 
     def updatePosition(self, game:dict={}):
         if game != {}:
-            # Apply velocity
-            self.x = (self.x + self.x_vel * (game['frametime'] / 1000)) % game['gameWidth']
-            self.y = (self.y + self.y_vel * (game['frametime'] / 1000)) % game['gameHeight']
+            if abs(self.dashX) + abs(self.dashY) > 1:
+                # Calculate Dash Velocity
+                angle = math.atan2(self.dashY, self.dashX)
+                if self.tacticalDash:
+                    magnitude = self.tacticalDashSpeed
+                elif self.initialDash:
+                    magnitude = self.initialDashSpeed
+                velX = math.cos(angle) * magnitude
+                velY = math.sin(angle) * magnitude
 
+                # Apply Dash Velocity
+                self.x = (self.x + velX * (game['frametime'] / 1000)) % game['gameWidth']
+                self.y = (self.y + velY * (game['frametime'] / 1000)) % game['gameHeight']
+
+                # Adjust Dash Variables
+                if abs(self.dashX) < abs(velX * (game['frametime'] / 1000)):
+                    self.dashX = 0
+                else:
+                    self.dashX -= velX * (game['frametime'] / 1000)
+
+                if abs(self.dashY) < abs(velY * (game['frametime'] / 1000)):
+                    self.dashY = 0
+                else:
+                    self.dashY -= velY * (game['frametime'] / 1000)
+            else:
+                # Apply velocity
+                self.x = (self.x + self.x_vel * (game['frametime'] / 1000)) % game['gameWidth']
+                self.y = (self.y + self.y_vel * (game['frametime'] / 1000)) % game['gameHeight']
+                
         # Update the position of the player
         self.points = [(self.x + math.cos(point[0] + self.angle) * self.size * point[1],
                         self.y + math.sin(point[0] + self.angle) * self.size * point[1])
@@ -210,7 +255,7 @@ class Player:
         for i in range(len(self.points)):
             point0 = self.points[i]
             point1 = self.points[(i + 1) % len(self.points)]
-            angle = math.atan2(point0[1] + point1[1], point0[0] + point1[0]) + random.random() * math.pi - math.pi / 2
+            angle = math.atan2(point0[1] + point1[1], point0[0] + point1[0]) + random() * math.pi - math.pi / 2
             magnitude = (math.sqrt((self.x - point0[0]) ** 2 + (self.y - point0[1]) ** 2) + math.sqrt((self.x - point1[0]) ** 2 + (self.y - point1[1]) ** 2)) / 2
             xVel = math.cos(angle) * magnitude * 5
             yVel = math.sin(angle) * magnitude * 5
@@ -238,6 +283,50 @@ class Player:
         # Get player input
         keys = pygame.key.get_pressed()
 
+        if self.manualEvasion and self.evasionModeActive == 0 and self.evasionModeCharge >= self.evasionModeCost:
+            if keys[pygame.K_UP] and keys[pygame.K_DOWN] and keys[pygame.K_LEFT] and keys[pygame.K_RIGHT]:
+                print('manual evasion mode: active')
+                self.evasionModeActive = self.evasionModeDuration
+                self.evasionModeCharge -= self.evasionModeCost
+
+        # Update last pressed
+        if self.tacticalDash:
+            for key in lastPressed.keys():
+                if keys[key]:
+                    
+                    if lastPressed[key] > 0 and lastPressed[key] < doubleTapRange:
+                        # Dash
+                        
+                        match key:
+                            case pygame.K_UP:
+                                self.dashY = -self.tacticalDashDistance
+                                self.y_vel = -self.tacticalDashSpeed * 0.5
+                            case pygame.K_DOWN:
+                                self.dashY = self.tacticalDashDistance
+                                self.y_vel = self.tacticalDashSpeed * 0.5
+                            case pygame.K_LEFT:
+                                self.dashX = -self.tacticalDashDistance
+                                self.x_vel = -self.tacticalDashSpeed * 0.5
+                            case pygame.K_RIGHT:
+                                self.dashX = self.tacticalDashDistance
+                                self.x_vel = self.tacticalDashSpeed * 0.5
+
+                        print(self.dashX, self.dashY)
+                    lastPressed[key] = 0
+                else:
+                    lastPressed[key] += game['frametime'] / 1000
+        elif self.initialDash:
+            if keys[pygame.K_UP]:
+                if lastPressed[pygame.K_UP] > 0 and lastPressed[pygame.K_UP] < doubleTapRange:
+                    # Dash
+                    self.dashX = math.cos(self.angle) * self.initialDashDistance
+                    self.dashY = math.sin(self.angle) * self.initialDashDistance
+                    self.x_vel = math.cos(self.angle) * self.initialDashSpeed
+                    self.y_vel = math.sin(self.angle) * self.initialDashSpeed
+                lastPressed[pygame.K_UP] = 0
+            else:
+                lastPressed[pygame.K_UP] += game['frametime'] / 1000
+
         # Read player input
         if keys[pygame.K_SPACE] and not self.shooting:
             self.shooting = True
@@ -254,19 +343,43 @@ class Player:
                                             BULLET_SIZE))
         elif not keys[pygame.K_SPACE]:
             self.shooting = False
+
+        if keys[pygame.K_LSHIFT] and not self.specialState:
+            if self.specialCharge >= self.specialCost:
+                
+                self.specialCharge -= self.specialCost
+                self.specialState = True
+                self.specialFunction(game)
+        elif not keys[pygame.K_LSHIFT]:
+            self.specialState = False
             
         if keys[pygame.K_LEFT]:
-            self.angle -= self.rotation * (game['frametime'] / 1000)
+            if self.evasionModeActive > 0:
+                self.angle -= self.rotation * self.evasionModeRotation * (game['frametime'] / 1000)
+            else:
+                self.angle -= self.rotation * (game['frametime'] / 1000)
 
         if keys[pygame.K_RIGHT]:
-            self.angle += self.rotation * (game['frametime'] / 1000)
+            if self.evasionModeActive > 0:
+                self.angle += self.rotation * self.evasionModeRotation * (game['frametime'] / 1000)
+            else:
+                self.angle += self.rotation * (game['frametime'] / 1000)
 
         if keys[pygame.K_UP]:
             
-            self.x_vel += math.cos(self.angle) * (game['frametime'] / 1000) * self.acceleration
-            self.y_vel += math.sin(self.angle) * (game['frametime'] / 1000) * self.acceleration
-
-            vectorMagnitude = math.sqrt(self.x_vel ** 2 + self.y_vel ** 2)
+            if self.afterburn and self.afterburnCharge > 0:
+                self.x_vel += math.cos(self.angle) * (game['frametime'] / 1000) * self.acceleration * self.afterburnBoost
+                self.y_vel += math.sin(self.angle) * (game['frametime'] / 1000) * self.acceleration * self.afterburnBoost
+                self.afterburnCharge = max(0, self.afterburnCharge - self.afterburnCost * game['frametime'] / 1000)
+                vectorMagnitude = math.sqrt(self.x_vel ** 2 + self.y_vel ** 2) / self.afterburnBoost
+            elif self.evasionModeActive > 0:
+                self.x_vel += math.cos(self.angle) * (game['frametime'] / 1000) * self.acceleration * self.evasionModeAcceleration
+                self.y_vel += math.sin(self.angle) * (game['frametime'] / 1000) * self.acceleration * self.evasionModeAcceleration
+                vectorMagnitude = math.sqrt(self.x_vel ** 2 + self.y_vel ** 2)
+            else:
+                self.x_vel += math.cos(self.angle) * (game['frametime'] / 1000) * self.acceleration
+                self.y_vel += math.sin(self.angle) * (game['frametime'] / 1000) * self.acceleration
+                vectorMagnitude = math.sqrt(self.x_vel ** 2 + self.y_vel ** 2)
             
             if vectorMagnitude > self.maxSpeed:
                 scaleFactor = self.maxSpeed / vectorMagnitude
@@ -275,6 +388,8 @@ class Player:
 
             # Check progress
             self.progress += game['frametime'] / 1000
+
+            self.afterburnCooldown = self.afterburnMaxCooldown
 
             while self.progress > 1 / THRUST_PARTICLES:
                 self.progress -= 1 / THRUST_PARTICLES
@@ -289,6 +404,11 @@ class Player:
                 game['particles'].append(Particle(pX, pY, pVelX, pVelY, 4, 0, pygame.Color(255, 255, 0, 255), pygame.Color(255, 0, 0, 100), 0.1, layer=1))
 
         else:
+            if self.afterburn:
+                self.afterburnCooldown = max(0, self.afterburnCooldown - game['frametime'] / 1000)
+                if self.afterburnCooldown <= 0:
+                    self.afterburnCharge = min(self.afterburnMax, self.afterburnCharge + game['frametime'] / 1000)
+
             vectorMagnitude = math.sqrt(self.x_vel ** 2 + self.y_vel ** 2)
             
             if vectorMagnitude > self.maxSpeed * self.noAccelMulti:
@@ -298,8 +418,12 @@ class Player:
 
             # Apply Friction
             angle = math.atan2(self.y_vel, self.x_vel)
-            self.x_vel -= math.cos(angle) * self.friction * game['frametime'] / 1000
-            self.y_vel -= math.sin(angle) * self.friction * game['frametime'] / 1000
+            if self.evasionModeActive > 0:
+                self.x_vel -= math.cos(angle) * self.friction * self.evasionModeFriction * game['frametime'] / 1000
+                self.y_vel -= math.sin(angle) * self.friction * self.evasionModeFriction * game['frametime'] / 1000
+            else:
+                self.x_vel -= math.cos(angle) * self.friction * game['frametime'] / 1000
+                self.y_vel -= math.sin(angle) * self.friction * game['frametime'] / 1000
 
             self.progress = 0
 
@@ -320,16 +444,29 @@ class Player:
             game (dict): The game dict
         """
 
-        if self.enabled:
-            self.draw(game)
-            self.updateControl(game)
-            self.updatePosition(game)
+        if not self.enabled:
+            return True
+
+        self.specialCharge = min(self.specialMaxCharge, self.specialCharge + game['frametime'] / 1000)
+
+        if self.evasionModeActive == 0:
+            self.evasionModeCharge = min(self.evasionModeMax, self.evasionModeCharge + game['frametime'] / 1000)
+        self.evasionModeActive = max(0, self.evasionModeActive - game['frametime'] / 1000)
+
+        self.draw(game)
+        self.updateControl(game)
+        self.updatePosition(game)
         
         # Test for collisions
-        if self.updateCollisions(game):
+        if self.evasionModeActive <= 0 and self.updateCollisions(game):
             effects.createExplosion(self.x, self.y, game)
+            # Evasion Mode
+            if self.evasionMode and self.evasionModeCharge >= self.evasionModeCost:
+                print('evasion mode: active')
+                self.evasionModeActive = self.evasionModeDuration
+                self.evasionModeCharge -= self.evasionModeCost
         
-        if self.enabled and self.health <= 0:
+        if self.health <= 0:
             self.createDeathEffect(game)
             return False
         return True
@@ -363,13 +500,18 @@ class Player:
         match game['class']:
             case 'scout':
                 self.acceleration = 140
-                self.maxSpeed = 160
+                self.maxSpeed = 200
                 self.rotation = 3
                 self.friction = 100
                 self.maxHealth = 2
                 self.health = 2
                 self.specialName = 'TELEPORT'
-                self.noAccelMulti = 0.7
+                self.specialCharge = 30
+                self.specialMaxCharge = 30
+                self.specialCost = 30
+                self.specialFunction = teleport
+
+                self.noAccelMulti = 0.8
 
         # Opening JSON file
         with open('libraries/upgrades.json') as json_file:

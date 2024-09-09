@@ -372,7 +372,7 @@ class ReduxUpgrades:
                 pressedKeys.append(pygame.K_SPACE)
                 if self.state == 0:
                     if self.selected < 4:
-                        if self.stars <= 0:
+                        if False:#self.stars <= 0:
                             self.state = 1
                             self.confirm = NoStarMenu(game)
                             return
