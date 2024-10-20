@@ -2,6 +2,35 @@ import pygame
 import math
 
 
+def draw_rounded_rect(surface, color, rect, corner_radius):
+    """
+    Draws a rectangle with rounded corners.
+    
+    :param surface: The surface to draw on.
+    :param color: The color of the rectangle.
+    :param rect: The rect representing the position and size of the rectangle.
+    :param corner_radius: The radius of the corners.
+    """
+    if corner_radius > 0:
+        # Top-left corner
+        pygame.draw.circle(surface, color, (rect.x + corner_radius, rect.y + corner_radius), corner_radius)
+        # Top-right corner
+        pygame.draw.circle(surface, color, (rect.x + rect.width - corner_radius, rect.y + corner_radius), corner_radius)
+        # Bottom-left corner
+        pygame.draw.circle(surface, color, (rect.x + corner_radius, rect.y + rect.height - corner_radius), corner_radius)
+        # Bottom-right corner
+        pygame.draw.circle(surface, color, (rect.x + rect.width - corner_radius, rect.y + rect.height - corner_radius), corner_radius)
+
+        # Draw the rectangle without corners
+        pygame.draw.rect(surface, color, (rect.x + corner_radius, rect.y, rect.width - 2 * corner_radius, rect.height))
+        pygame.draw.rect(surface, color, (rect.x, rect.y + corner_radius, rect.width, rect.height - 2 * corner_radius))
+
+        # Draw the edge rectangles to fill in the gaps
+        pygame.draw.rect(surface, color, (rect.x + corner_radius, rect.y, rect.width - 2 * corner_radius, rect.height))
+        pygame.draw.rect(surface, color, (rect.x, rect.y + corner_radius, rect.width, rect.height - 2 * corner_radius))
+    else:
+        pygame.draw.rect(surface, color, rect)
+
 # Function to create a gradient surface
 def create_gradient_surface(size, start_color, end_color):
     gradient = pygame.Surface(size)
@@ -88,6 +117,56 @@ def renderText(text, font, start_color, end_color, shadow_color, shadow_offset, 
     effect_surface.blit(text_surface, (outline_width, outline_width))
 
     return effect_surface
+
+def draw_player(surface, color, innercolor, center, size, player, width=0):
+    for part in player.playerShape:
+        # Calculate the coordinates of the player
+        points = []
+        for vec in part:
+            x = math.cos(vec[0] + math.pi * 1.5) * vec[1] * size + center[0]
+            y = math.sin(vec[0] + math.pi * 1.5) * vec[1] * size + center[1]
+            points.append((x, y))
+
+        # Draw the part
+        pygame.draw.polygon(surface, innercolor, points, width=0)
+        pygame.draw.polygon(surface, color, points, width=width)
+
+def draw_wrapped_text(surface, text, font, rect, startColor, endColor, shadowColor, shadowOffset=(3, 3), outlineColor=(0, 0, 0), outlineSize=1):
+    paragraphs = text.split('\n')
+    y = rect.top
+
+    for paragraph in paragraphs:
+        words = paragraph.split(' ')
+        lines = []
+        current_line = []
+
+        for word in words:
+            # Test the line with the new word
+            current_line.append(word)
+            test_line = ' '.join(current_line)
+            test_width, test_height = font.size(test_line)
+
+            if test_width <= rect.width:
+                # The word fits in the line
+                continue
+            else:
+                # The word doesn't fit, start a new line
+                current_line.pop()  # Remove the word
+                lines.append(' '.join(current_line))  # Add the current line to the lines list
+                current_line = [word]  # Start a new line with the word
+
+        # Add the last line to the lines list
+        lines.append(' '.join(current_line))
+
+        for line in lines:
+            line_surf = renderText(line, font, startColor, endColor, shadowColor, shadowOffset, outlineColor, outlineSize)
+            surface.blit(line_surf, (rect.left, y))
+            if line:
+                y += font.get_linesize()
+
+        # Add a newline space
+        if current_line:
+            y += font.get_linesize()
 
 # Function to create a surface with a vignette effect
 def create_vignette_surface(size, edge_color, internal_radius, max_alpha=255, sharpness=1.0):

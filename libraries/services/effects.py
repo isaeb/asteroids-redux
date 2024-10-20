@@ -16,7 +16,7 @@ def createExplosion(x, y, game, scale=2):
 
         pX = x
         pY = y
-        game['particles'].append(Particle(pX, pY, pVelX, pVelY, 4, 0, pygame.Color(255, 100, 0, 250), pygame.Color(100, 30, 0, 0), 0.4, layer=1))
+        game['particles'].append(Particle(pX, pY, pVelX, pVelY, 3, 6, pygame.Color(100, 100, 100, 250), pygame.Color(100, 100, 100, 0), 0.4, layer=1))
     for _ in range(12):
         pMagnitude = random.random() * 2 + 3
         pMagnitude *= scale

@@ -4,7 +4,7 @@ import json
 
 from libraries.services.drawEffects import renderText
 
-pressedKeys = [pygame.K_SPACE]
+pressedKeys = ['fire']
 cooldown = 0
 
 
@@ -161,24 +161,24 @@ class ReduxResults:
         keys = pygame.key.get_pressed()
 
         # Read player input
-        if keys[pygame.K_SPACE]:
-            if pygame.K_SPACE not in pressedKeys:
-                pressedKeys.append(pygame.K_SPACE)
+        if any([keys[key] for key in game['controls']['keyFire']]):
+            if 'fire' not in pressedKeys:
+                pressedKeys.append('fire')
                 return True
-        else:
-            if pygame.K_SPACE in pressedKeys:
-                pressedKeys.remove(pygame.K_SPACE)
-        if keys[pygame.K_UP]:
-            if pygame.K_UP not in pressedKeys:
-                pressedKeys.append(pygame.K_UP)
-        else:
-            if pygame.K_UP in pressedKeys:
-                pressedKeys.remove(pygame.K_UP)
+        elif not any([keys[key] for key in game['controls']['keyFire']]):
+            if 'fire' in pressedKeys:
+                pressedKeys.remove('fire')
+        if any([keys[key] for key in game['controls']['keyUp']]):
+            if 'up' not in pressedKeys:
+                pressedKeys.append('up')
+        elif not any([keys[key] for key in game['controls']['keyUp']]):
+            if 'up' in pressedKeys:
+                pressedKeys.remove('up')
         
-        if keys[pygame.K_DOWN]:
-            if pygame.K_DOWN not in pressedKeys:
-                pressedKeys.append(pygame.K_DOWN)
-        else:
-            if pygame.K_DOWN in pressedKeys:
-                pressedKeys.remove(pygame.K_DOWN)
+        if any([keys[key] for key in game['controls']['keyDown']]):
+            if 'down' not in pressedKeys:
+                pressedKeys.append('down')
+        elif not any([keys[key] for key in game['controls']['keyDown']]):
+            if 'down' in pressedKeys:
+                pressedKeys.remove('down')
         return False

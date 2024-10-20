@@ -150,4 +150,4 @@ def spawnUFO(game:dict, speed:float):
 
     ufoTargetX = random() * (game['gameWidth'] - ufoSize * 2) + ufoSize
     ufoTargetY = random() * (game['gameHeight'] - ufoSize * 2) + ufoSize
-    game['enemies'].append(UFO(ufoX, ufoY, ufoTargetX, ufoTargetY, ufoSize, speed))
+    game['enemies'].append(UFO(ufoX, ufoY, ufoTargetX, ufoTargetY, ufoSize, speed, fireTime=2))

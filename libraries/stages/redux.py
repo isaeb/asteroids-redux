@@ -7,6 +7,7 @@ from libraries.constants import *
 from libraries.entity.player import Player
 from libraries.stages.reduxUpgrades import ReduxUpgrades
 from libraries.stages.reduxResults import ReduxResults
+from libraries.stages.worldMap import WorldMap
 from libraries.services.drawEffects import renderText, create_vignette_surface
 from libraries.services.effects import Score
 
@@ -25,7 +26,6 @@ class Redux:
         game['gameHeight'] = HEIGHT
         game['bulletWrap'] = True
 
-        game['class'] = 'scout'
         game['movement'] = 0
         game['weapons'] = 0
         game['special'] = 0
@@ -34,7 +34,7 @@ class Redux:
         game['weaponsFeatures'] = []
         game['specialFeatures'] = []
         game['auxiliaryFeatures'] = []
-        game['last'] = 'Redux'
+        game['last'] = 'CSSRedux'
 
         # Declare Variables
         self.score = 0
@@ -44,6 +44,7 @@ class Redux:
         self.cooldown = maxCooldown
 
         # Upgrades
+        self.autoFire = False
         self.afterburn = False
         self.evasionMode = False
 
@@ -79,9 +80,10 @@ class Redux:
         self.fadeoutSurf.fill((0, 0, 0))
         self.guiAlpha = 1
 
-        self.state = 'gameplay'
+        self.state = 'map'
         self.upgradeObject = ReduxUpgrades(game)
         self.resultsObject = ReduxResults(game)
+        self.mapObject = WorldMap(game)
 
         # Set up background
         game['background'].fill((0, 0, 0))
@@ -103,7 +105,7 @@ class Redux:
         self.enemyCount = len(game['enemies'])
         self.level += 1
         self.spawnTick = max(1, 10 - self.level)
-        self.targetScore = 50 + 10 * self.level
+        self.targetScore = 10 + 10 * self.level
 
         self.timerObject = ReduxClock(self.guiSurface, self.timerFont, time=60)
         self.missionComplete = None
@@ -115,10 +117,12 @@ class Redux:
         game['shipParts'] = []
         game['enemies'] = []
         game['enemyBullet'] = []
+        game['bullets'] = []
 
         # Create Player
         game['players'] = [Player(320, 240, 0, PLAYER_SIZE)]
         game['players'][0].updateStats(game)
+        # print(game['class'])
 
         self.guiModules = []
 
@@ -132,13 +136,14 @@ class Redux:
         self.guiModules.append(ReduxGuiBar(x, y, specialWidth, specialHeight, self.specialFont, self.specialColor, game['players'][0].specialName, pygame.Color(200, 255, 200), pygame.Color(200, 255, 200), progressFunction))
 
         # Ammo
-        yOffset += self.specialFont.render(game['players'][0].specialName, True, self.healthColor).get_height() + specialHeight
-        ammoWidth = game['screenWidth'] * 0.1
-        ammoHeight = game['screenHeight'] * 0.02
-        x = game['screenWidth'] * 0.03
-        y = game['screenHeight'] * 0.04 + yOffset
-        progressFunction = lambda game:  (game['players'][0].maxBullets - len(game['bullets'])) / game['players'][0].maxBullets
-        self.guiModules.append(ReduxGuiBar(x, y, ammoWidth, ammoHeight, self.ammoFont, self.ammoColor, 'AMMO', pygame.Color(200, 255, 200), pygame.Color(200, 255, 200), progressFunction))
+        if not self.autoFire:
+            yOffset += self.specialFont.render(game['players'][0].specialName, True, self.healthColor).get_height() + specialHeight
+            ammoWidth = game['screenWidth'] * 0.1
+            ammoHeight = game['screenHeight'] * 0.02
+            x = game['screenWidth'] * 0.03
+            y = game['screenHeight'] * 0.04 + yOffset
+            progressFunction = lambda game:  (game['players'][0].maxBullets - len(game['bullets'])) / game['players'][0].maxBullets
+            self.guiModules.append(ReduxGuiBar(x, y, ammoWidth, ammoHeight, self.ammoFont, self.ammoColor, 'AMMO', pygame.Color(200, 255, 200), pygame.Color(200, 255, 200), progressFunction))
 
         self.updateUpgrades(game)
 
@@ -258,6 +263,12 @@ class Redux:
                 drawStars(game['background'], self.stars, game)
                 return 'Gameover'
             
+        elif self.state == 'map':
+            self.mapObject.update(game)
+            self.mapObject.draw(game)
+            
+            pygame.display.flip()
+
         elif self.state == 'upgrades':
             
             # Update Background
@@ -380,7 +391,6 @@ class Redux:
         # Draw Score Text
         scoreSurf = renderText(f'{self.score} / {self.targetScore}', self.scoreFont, self.scoreStartColor, self.scoreEndColor, (50, 50, 50), (3, 3), (0, 0, 0), 1)
         scoreWidth = scoreSurf.get_width()
-        scoreHeight = scoreSurf.get_height()
         x = game['screenWidth'] * 0.97 - scoreWidth
         y = game['screenHeight'] * 0.03 + missionHeight * 1.5
         self.guiSurface.blit(scoreSurf, (x, y))
@@ -418,6 +428,10 @@ class Redux:
             return
         
         player = game['players'][0]
+
+        if not self.autoFire and player.autoFire:
+            self.autoFire = True
+            self.guiModules.pop(len(self.guiModules) - 1)
 
         if not self.afterburn and player.afterburn:
             self.afterburn = True

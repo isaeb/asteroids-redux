@@ -201,7 +201,7 @@ def draw_pointer(surface, color, center, size):
     # Draw the star
     pygame.draw.aalines(surface, color, True, points)
 
-class ReduxUpgrades:
+class ClassicUpgrades:
     def __init__(self, game):
         menuWidth = game['screenWidth'] * 0.8
         menuHeight = game['screenHeight'] * 0.8
@@ -371,6 +371,39 @@ class ReduxUpgrades:
         elif not True in [keys[key] for key in game['controls']['keyDown']] and 'down' in pressedKeys:
             pressedKeys.remove('down')
         return None
+    
+    def updateUpgrades(self, game:dict):
+        print('updating gui')
+        if len(game['players']) == 0:
+            return
+        
+        player = game['players'][0]
+
+        if not self.afterburn and player.afterburn:
+            self.afterburn = True
+            x = game['screenWidth'] * 0.03
+            y = game['screenHeight'] * 0.04
+            length = len(self.guiModules)
+            if len(self.guiModules) > 0:
+                m = self.guiModules[length - 1]
+                y = m.y + m.font.render(m.text, True, (0, 0, 0)).get_height() * 1.5
+            width = game['screenWidth'] * 0.1
+            height = game['screenHeight'] * 0.02
+            progressFunction = lambda game: game['players'][0].afterburnCharge / game['players'][0].afterburnMax
+            self.guiModules.append(ReduxGuiBar(x, y, width, height, self.guiFont, self.guiColor, 'Afterburners', pygame.Color(200, 255, 200), pygame.Color(200, 255, 200), progressFunction))
+
+        if not self.evasionMode and player.evasionMode:
+            self.evasionMode = True
+            x = game['screenWidth'] * 0.03
+            y = game['screenHeight'] * 0.04
+            length = len(self.guiModules)
+            if len(self.guiModules) > 0:
+                m = self.guiModules[length - 1]
+                y = m.y + m.font.render(m.text, True, (0, 0, 0)).get_height() * 1.5
+            width = game['screenWidth'] * 0.1
+            height = game['screenHeight'] * 0.02
+            progressFunction = lambda game: (game['players'][0].evasionModeCharge + game['players'][0].evasionModeActive * game['players'][0].evasionModeCost / game['players'][0].evasionModeDuration) / game['players'][0].evasionModeMax
+            self.guiModules.append(ReduxGuiBar(x, y, width, height, self.guiFont, self.guiColor, 'Evasion', pygame.Color(200, 255, 200), pygame.Color(200, 255, 200), progressFunction))
 
 class ConfirmMenu:
     def __init__(self, game, category):

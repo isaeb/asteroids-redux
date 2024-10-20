@@ -9,13 +9,14 @@ from libraries.constants import *
 
 
 bulletShape = [(math.pi * 0.25, 0.707), (math.pi * 0.75, 0.707), (math.pi * 1.25, 0.707), (math.pi * 1.75, 0.707)]
+laserShape = [(math.pi * 0.4, 0.707), (math.pi * 0.9, 0.707), (math.pi * 1.4, 0.707), (math.pi * 1.9, 0.707)]
 
 class Bullet:
     """
     Class for bullets
     """
     
-    def __init__(self, x:float, y:float, angle:float, moveAngle:float, spd:float, size:float, distance:float=BULLET_DISTANCE):
+    def __init__(self, x:float, y:float, angle:float, moveAngle:float, spd:float, size:float, distance:float=BULLET_DISTANCE, damage:float=1, type='bullet'):
         """
         Args:
             x (float): x position
@@ -35,11 +36,14 @@ class Bullet:
         self.x_vel = math.cos(angle) * spd
         self.y_vel = math.sin(angle) * spd
         self.distance = distance
+        self.damage = damage
+        self.color = {'bullet': (255, 255, 255), 'laser': (255, 0, 0)}[type]
         
         # Make a Polygon
+        shape = {'bullet': bulletShape, 'laser': laserShape}[type]
         self.points = [(self.x + math.cos(point[0] + self.angle) * self.size * point[1],
                         self.y + math.sin(point[0] + self.angle) * self.size * point[1])
-                        for point in bulletShape]
+                        for point in shape]
 
     def draw(self, game:dict):
         """
@@ -49,7 +53,7 @@ class Bullet:
 
         if not game['bulletWrap']:
             pygame.draw.polygon(game['layers'][1], pygame.Color(0, 0, 0, 255), self.points)
-            pygame.draw.aalines(game['layers'][1], pygame.Color(255, 255, 255, 255), True, self.points)
+            pygame.draw.aalines(game['layers'][1], self.color, True, self.points)
             return
 
         scrollOffsetX = - game['scrollX']
@@ -80,7 +84,7 @@ class Bullet:
                 p = [(point[0] + x - 1 + scrollOffsetX, point[1] + y - 1 + scrollOffsetY) for point in self.points]
                 # offset by 1 pixel to account for anti aliasing
                 pygame.draw.polygon(game['layers'][1], pygame.Color(0, 0, 0, 255), p)
-                pygame.draw.aalines(game['layers'][1], pygame.Color(255, 255, 255, 255), True, p)
+                pygame.draw.aalines(game['layers'][1], self.color, True, p)
 
     def checkEnemyCollision(self, game:dict):
         for n, enemy in enumerate(game['enemies']):
@@ -154,13 +158,13 @@ class Bullet:
         n = self.checkAsteroidCollision(game)
         if n is not None:
             effects.createExplosion(self.x, self.y, game, self.size)
-            game['asteroids'][n].health -= 1
+            game['asteroids'][n].health -= self.damage
             return True
     
         n = self.checkEnemyCollision(game)
         if n is not None:
             effects.createExplosion(self.x, self.y, game, self.size)
-            game['enemies'][n].health -= 1
+            game['enemies'][n].health -= self.damage
             return True
         
         return False

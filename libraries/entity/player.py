@@ -12,16 +12,59 @@ from libraries.entity.particle import Particle
 from libraries.entity.shipPart import Line
 from libraries.constants import *
 from libraries.services.specialFunctions import *
+from libraries.services.polygon import cartesianToPolar
 
 from random import random
 
 import json
 
 
-lastPressed = {pygame.K_UP: 0, pygame.K_DOWN: 0, pygame.K_LEFT: 0, pygame.K_RIGHT: 0}
+lastPressed = {'keyFire': 0, 'keySpecial': 0, 'keyUp': 0, 'keyDown': 0, 'keyLeft': 0, 'keyRight': 0}
 doubleTapRange = 0.11
 
-playerShape = [(0, 1), (math.pi * 0.75, 1), (math.pi, 0.25), (math.pi * 1.25, 1)]
+scoutShape = [
+    [(0, 8), (4, 0), (8, 8), (4, 6)],
+    [(3, 3), (4, 1), (5, 3), (4, 4)]
+    ]
+scoutShape = [[((point[0] - 4) / 6, (point[1] - 4) / 6) for point in part] for part in scoutShape] # Scale
+scoutShape = [[cartesianToPolar(point[0], point[1]) for point in part] for part in scoutShape] # C2P
+scoutShape = [[(point[0] + math.pi * 0.5, point[1]) for point in part] for part in scoutShape] # Rotate
+
+scoutHitbox = [(0, 8), (4, 0), (8, 8), (4, 6)]
+scoutHitbox = [((point[0] - 4) / 6, (point[1] - 4) / 6) for point in scoutHitbox] # Scale
+scoutHitbox = [cartesianToPolar(point[0], point[1]) for point in scoutHitbox] # C2P
+scoutHitbox = [(point[0] + math.pi * 0.5, point[1]) for point in scoutHitbox] # Rotate
+
+bomberShape = [
+    [(0, 8), (4, 3), (4, 2), (6, 0), (8, 2), (8, 3), (12, 8), (6, 7)],
+    [(4, 2), (4, 5), (6, 7), (8, 5), (8, 2), (6, 0)],
+    [(5, 1), (5, 2), (6, 3), (7, 2), (7, 1), (6, 0)],
+    [(2, 3), (3, 3), (3, 6), (2.5, 7), (2, 6)],
+    [(9, 3), (10, 3), (10, 6), (9.5, 7), (9, 6)]
+    ]
+bomberShape = [[((point[0] - 6) / 8, (point[1] - 4) / 6) for point in part] for part in bomberShape] # Scale
+bomberShape = [[cartesianToPolar(point[0], point[1]) for point in part] for part in bomberShape] # C2P
+bomberShape = [[(point[0] + math.pi * 0.5, point[1]) for point in part] for part in bomberShape] # Rotate
+
+bomberHitbox = [(0, 8), (4, 3), (4, 2), (6, 0), (8, 2), (8, 3), (12, 8), (6, 7)]
+bomberHitbox = [((point[0] - 4) / 6, (point[1] - 4) / 6) for point in bomberHitbox] # Scale
+bomberHitbox = [cartesianToPolar(point[0], point[1]) for point in bomberHitbox] # C2P
+bomberHitbox = [(point[0] + math.pi * 0.5, point[1]) for point in bomberHitbox] # Rotate
+
+heavyShape = [
+    [(2, 0), (0, 2), (0, 6), (2, 8)],
+    [(6, 0), (8, 2), (8, 6), (6, 8)],
+    [(2, 2), (1, 4), (2, 7), (3, 6), (5, 6), (6, 7), (7, 4), (6, 2), (5, 3), (4, 1), (3, 3)],
+    [(3, 5), (5, 5), (4, 3)]
+    ]
+heavyShape = [[((point[0] - 4) / 6, (point[1] - 4) / 6) for point in part] for part in heavyShape] # Scale
+heavyShape = [[cartesianToPolar(point[0], point[1]) for point in part] for part in heavyShape] # C2P
+heavyShape = [[(point[0] + math.pi * 0.5, point[1]) for point in part] for part in heavyShape] # Rotate
+
+heavyHitbox = [(2, 0), (0, 2), (0, 6), (2, 8), (2, 7), (3, 6), (5, 6), (6, 7), (6, 8), (8, 6), (8, 2), (6, 0), (6, 2), (5, 3), (4, 1), (3, 3), (2, 2)]
+heavyHitbox = [((point[0] - 4) / 6, (point[1] - 4) / 6) for point in bomberHitbox] # Scale
+heavyHitbox = [cartesianToPolar(point[0], point[1]) for point in bomberHitbox] # C2P
+heavyHitbox = [(point[0] + math.pi * 0.5, point[1]) for point in bomberHitbox] # Rotate
 
 class Player:
     """
@@ -65,8 +108,14 @@ class Player:
         self.x_vel = 0
         self.y_vel = 0
         self.shooting = True
+        self.bulletDamage = 1
+        self.bulletSpeed = BULLET_SPEED
+        self.bulletSize = BULLET_SIZE
+        self.bulletPierce = 0
         self.progress = 0
-        self.playerShape = playerShape
+
+        self.playerShape = scoutShape
+        self.hitbox = scoutHitbox
 
         self.maxBullets = MAX_BULLETS
 
@@ -74,6 +123,7 @@ class Player:
 
         # Upgrade Variables
 
+        # Scout Movement
         # Afterburn
         self.afterburn = False
         self.afterburnCharge = 999
@@ -108,6 +158,37 @@ class Player:
         # Dashing (general)
         self.dashX = 0
         self.dashY = 0
+
+        # Weapons
+        # Auto-Fire
+        self.autoFire = False
+        self.autoFireRate = 5
+        self.autoFireCooldown = 0
+
+        # Spread-Fire
+        self.spreadFireCount = 1
+        self.spreadAngle = 0
+
+        # Charge-Beams
+        self.chargeBlast = False
+        self.chargeTime = 0
+        self.chargeBlastDamage = 1
+        self.chargeBlastCount = 1
+        self.chargeBlastSpread = 0
+        self.chargeBlastSize = 1
+        self.chargeBlastSpeed = BULLET_SPEED
+        self.charge = 0
+
+        # Lasers!
+        self.laser = False
+
+        # Drones
+        self.droneCount = 0
+        self.droneFireRate = 1
+        self.droneDamage = 1
+        self.droneBulletSpeed = BULLET_SPEED
+        self.droneBulletSize = self.bulletSize * 0.5
+        self.droneLaser = False
  
     def draw(self, game:dict):
         """
@@ -140,10 +221,11 @@ class Player:
         # draw self
         for x in drawX:
             for y in drawY:
-                p = [(point[0] + x - 1 + scrollOffsetX, point[1] + y - 1 + scrollOffsetY) for point in self.points]
-                # offset by 1 pixel to account for anti aliasing
-                pygame.draw.polygon(game['layers'][2], pygame.Color(0, 0, 0, 255), p)
-                pygame.draw.aalines(game['layers'][2], pygame.Color(255, 255, 255, 255), True, p)
+                for index in range(len(self.points)):
+                    p = [(point[0] + x - 1 + scrollOffsetX, point[1] + y - 1 + scrollOffsetY) for point in self.points[index]]
+                    # offset by 1 pixel to account for anti aliasing
+                    pygame.draw.polygon(game['layers'][2], pygame.Color(0, 0, 0, 255), p)
+                    pygame.draw.aalines(game['layers'][2], pygame.Color(255, 255, 255, 255), True, p)
 
     def updatePosition(self, game:dict={}):
         if game != {}:
@@ -177,89 +259,94 @@ class Player:
                 self.y = (self.y + self.y_vel * (game['frametime'] / 1000)) % game['gameHeight']
                 
         # Update the position of the player
-        self.points = [(self.x + math.cos(point[0] + self.angle) * self.size * point[1],
+        self.points = [[(self.x + math.cos(point[0] + self.angle) * self.size * point[1],
                         self.y + math.sin(point[0] + self.angle) * self.size * point[1])
-                        for point in playerShape]
+                        for point in part] for part in self.playerShape]
+        
+        self.hitboxPoints = [(self.x + math.cos(point[0] + self.angle) * self.size * point[1],
+                        self.y + math.sin(point[0] + self.angle) * self.size * point[1])
+                        for point in self.hitbox]
 
     def checkAsteroidCollision(self, game:dict):
         for n, asteroid in enumerate(game['asteroids']):
-            if polygon.colliding(asteroid.points, self.points):
+            if polygon.colliding(asteroid.points, self.hitboxPoints):
                 self.health -= 1
                 return n
             if asteroid.y + asteroid.size > game['gameHeight']:
-                if polygon.colliding(asteroid.points, [(point[0], point[1] + game['gameHeight']) for point in self.points]):
+                if polygon.colliding(asteroid.points, [(point[0], point[1] + game['gameHeight']) for point in self.hitboxPoints]):
                     self.health -= 1
                     return n
             if asteroid.y - asteroid.size < 0:
-                if polygon.colliding(asteroid.points, [(point[0], point[1] - game['gameHeight']) for point in self.points]):
+                if polygon.colliding(asteroid.points, [(point[0], point[1] - game['gameHeight']) for point in self.hitboxPoints]):
                     self.health -= 1
                     return n
             if asteroid.x + asteroid.size > game['gameWidth']:
-                if polygon.colliding(asteroid.points, [(point[0] + game['gameWidth'], point[1]) for point in self.points]):
+                if polygon.colliding(asteroid.points, [(point[0] + game['gameWidth'], point[1]) for point in self.hitboxPoints]):
                     self.health -= 1
                     return n
             if asteroid.x - asteroid.size < 0:
-                if polygon.colliding(asteroid.points, [(point[0] - game['gameWidth'], point[1]) for point in self.points]):
+                if polygon.colliding(asteroid.points, [(point[0] - game['gameWidth'], point[1]) for point in self.hitboxPoints]):
                     self.health -= 1
                     return n
         return None
     
     def checkProjectileCollision(self, game:dict):
         for n, bullet in enumerate(game['enemyBullets']):
-            if polygon.colliding(bullet.points, self.points):
+            if polygon.colliding(bullet.points, self.hitboxPoints):
                 self.health -= bullet.damage
                 return n
             if bullet.y + bullet.size > game['gameHeight']:
-                if polygon.colliding(bullet.points, [(point[0], point[1] + game['gameHeight']) for point in self.points]):
+                if polygon.colliding(bullet.points, [(point[0], point[1] + game['gameHeight']) for point in self.hitboxPoints]):
                     self.health -= bullet.damage
                     return n
             if bullet.y - bullet.size < 0:
-                if polygon.colliding(bullet.points, [(point[0], point[1] - game['gameHeight']) for point in self.points]):
+                if polygon.colliding(bullet.points, [(point[0], point[1] - game['gameHeight']) for point in self.hitboxPoints]):
                     self.health -= bullet.damage
                     return n
             if bullet.x + bullet.size > game['gameWidth']:
-                if polygon.colliding(bullet.points, [(point[0] + game['gameWidth'], point[1]) for point in self.points]):
+                if polygon.colliding(bullet.points, [(point[0] + game['gameWidth'], point[1]) for point in self.hitboxPoints]):
                     self.health -= bullet.damage
                     return n
             if bullet.x - bullet.size < 0:
-                if polygon.colliding(bullet.points, [(point[0] - game['gameWidth'], point[1]) for point in self.points]):
+                if polygon.colliding(bullet.points, [(point[0] - game['gameWidth'], point[1]) for point in self.hitboxPoints]):
                     self.health -= bullet.damage
                     return n
         return None
     
     def checkEnemyCollision(self, game:dict):
         for n, enemy in enumerate(game['enemies']):
-            if polygon.colliding(enemy.hitbox, self.points):
+            if polygon.colliding(enemy.hitbox, self.hitboxPoints):
                 self.health -= 1
                 return n
             if enemy.y + enemy.size > game['gameHeight']:
-                if polygon.colliding(enemy.hitbox, [(point[0], point[1] + game['gameHeight']) for point in self.points]):
+                if polygon.colliding(enemy.hitbox, [(point[0], point[1] + game['gameHeight']) for point in self.hitboxPoints]):
                     self.health -= 1
                     return n
             if enemy.y - enemy.size < 0:
-                if polygon.colliding(enemy.hitbox, [(point[0], point[1] - game['gameHeight']) for point in self.points]):
+                if polygon.colliding(enemy.hitbox, [(point[0], point[1] - game['gameHeight']) for point in self.hitboxPoints]):
                     self.health -= 1
                     return n
             if enemy.x + enemy.size > game['gameWidth']:
-                if polygon.colliding(enemy.hitbox, [(point[0] + game['gameWidth'], point[1]) for point in self.points]):
+                if polygon.colliding(enemy.hitbox, [(point[0] + game['gameWidth'], point[1]) for point in self.hitboxPoints]):
                     self.health -= 1
                     return n
             if enemy.x - enemy.size < 0:
-                if polygon.colliding(enemy.hitbox, [(point[0] - game['gameWidth'], point[1]) for point in self.points]):
+                if polygon.colliding(enemy.hitbox, [(point[0] - game['gameWidth'], point[1]) for point in self.hitboxPoints]):
                     self.health -= 1
                     return n
         return None
 
     def createDeathEffect(self, game:dict):
         effects.createExplosion(self.x, self.y, game)
-        for i in range(len(self.points)):
-            point0 = self.points[i]
-            point1 = self.points[(i + 1) % len(self.points)]
-            angle = math.atan2(point0[1] + point1[1], point0[0] + point1[0]) + random() * math.pi - math.pi / 2
-            magnitude = (math.sqrt((self.x - point0[0]) ** 2 + (self.y - point0[1]) ** 2) + math.sqrt((self.x - point1[0]) ** 2 + (self.y - point1[1]) ** 2)) / 2
-            xVel = math.cos(angle) * magnitude * 5
-            yVel = math.sin(angle) * magnitude * 5
-            game['shipParts'].append(Line(point0[0], point0[1], point1[0], point1[1], xVel, yVel, pygame.Color(255, 255, 255), health=2, layer=2))
+        for part in self.points:
+            for i in range(len(part)):
+                point0 = part[i]
+                point1 = part[(i + 1) % len(part)]
+                angle = math.atan2(point0[1] + point1[1], point0[0] + point1[0]) + random() * math.pi - math.pi / 2
+                magnitude = (math.sqrt((self.x - point0[0]) ** 2 + (self.y - point0[1]) ** 2) + math.sqrt((self.x - point1[0]) ** 2 + (self.y - point1[1]) ** 2)) / 2
+                xVel = math.cos(angle) * magnitude * 5
+                yVel = math.sin(angle) * magnitude * 5
+                game['shipParts'].append(Line(point0[0], point0[1], point1[0], point1[1], xVel, yVel, pygame.Color(255, 255, 255), health=2, layer=2))
             
     def updateCollisions(self, game:dict):
         n = self.checkAsteroidCollision(game)
@@ -284,7 +371,7 @@ class Player:
         keys = pygame.key.get_pressed()
 
         if self.manualEvasion and self.evasionModeActive == 0 and self.evasionModeCharge >= self.evasionModeCost:
-            if keys[pygame.K_UP] and keys[pygame.K_DOWN] and keys[pygame.K_LEFT] and keys[pygame.K_RIGHT]:
+            if any([keys[key] for key in (game['controls']['keyLeft'])]) and any([keys[key] for key in (game['controls']['keyRight'])]) and any([keys[key] for key in (game['controls']['keyUp'])]) and any([keys[key] for key in (game['controls']['keyDown'])]):
                 print('manual evasion mode: active')
                 self.evasionModeActive = self.evasionModeDuration
                 self.evasionModeCharge -= self.evasionModeCost
@@ -292,22 +379,20 @@ class Player:
         # Update last pressed
         if self.tacticalDash:
             for key in lastPressed.keys():
-                if keys[key]:
-                    
+                if any([keys[v] for v in (game['controls'][key])]):
                     if lastPressed[key] > 0 and lastPressed[key] < doubleTapRange:
                         # Dash
-                        
                         match key:
-                            case pygame.K_UP:
+                            case 'keyUp':
                                 self.dashY = -self.tacticalDashDistance
                                 self.y_vel = -self.tacticalDashSpeed * 0.5
-                            case pygame.K_DOWN:
+                            case 'keyDown':
                                 self.dashY = self.tacticalDashDistance
                                 self.y_vel = self.tacticalDashSpeed * 0.5
-                            case pygame.K_LEFT:
+                            case 'keyLeft':
                                 self.dashX = -self.tacticalDashDistance
                                 self.x_vel = -self.tacticalDashSpeed * 0.5
-                            case pygame.K_RIGHT:
+                            case 'keyRight':
                                 self.dashX = self.tacticalDashDistance
                                 self.x_vel = self.tacticalDashSpeed * 0.5
 
@@ -316,57 +401,54 @@ class Player:
                 else:
                     lastPressed[key] += game['frametime'] / 1000
         elif self.initialDash:
-            if keys[pygame.K_UP]:
-                if lastPressed[pygame.K_UP] > 0 and lastPressed[pygame.K_UP] < doubleTapRange:
+            if any([keys[key] for key in (game['controls']['keyUp'])]):
+                if lastPressed['keyUp'] > 0 and lastPressed['keyUp'] < doubleTapRange:
                     # Dash
                     self.dashX = math.cos(self.angle) * self.initialDashDistance
                     self.dashY = math.sin(self.angle) * self.initialDashDistance
                     self.x_vel = math.cos(self.angle) * self.initialDashSpeed
                     self.y_vel = math.sin(self.angle) * self.initialDashSpeed
-                lastPressed[pygame.K_UP] = 0
+                lastPressed['keyUp'] = 0
             else:
-                lastPressed[pygame.K_UP] += game['frametime'] / 1000
+                lastPressed['keyUp'] += game['frametime'] / 1000
 
         # Read player input
-        if keys[pygame.K_SPACE] and not self.shooting:
-            self.shooting = True
-            if len(game['bullets']) < self.maxBullets:
-                bXVel = self.x_vel + math.cos(self.angle) * BULLET_SPEED
-                bYVel = self.y_vel + math.sin(self.angle) * BULLET_SPEED
-                bAngle = math.atan2(bYVel, bXVel)
-                bMagnitude = max(BULLET_SPEED, math.sqrt(bXVel ** 2 + bYVel ** 2))
-                game['bullets'].append(Bullet(self.x + math.cos(self.angle) * self.size * BULLET_SIZE / 2,
-                                            self.y + math.sin(self.angle) * self.size * BULLET_SIZE / 2,
-                                            self.angle,
-                                            bAngle,
-                                            bMagnitude,
-                                            BULLET_SIZE))
-        elif not keys[pygame.K_SPACE]:
+        if self.autoFire:
+            self.autoFireCooldown = max(0, self.autoFireCooldown - game['frametime'] / 1000)
+            if any([keys[key] for key in game['controls']['keyFire']]) and self.autoFireCooldown == 0:
+                self.autoFireCooldown = 1 / self.autoFireRate
+                self.shoot(game)
+        else:
+            if any([keys[key] for key in game['controls']['keyFire']]) and not self.shooting:
+                self.shooting = True
+                self.shoot(game)
+        
+        if not any([keys[key] for key in game['controls']['keyFire']]):
             self.shooting = False
+            if self.chargeBlast:
+                self.charge = min(self.chargeTime, self.charge + game['frametime'] / 1000)
 
-        if keys[pygame.K_LSHIFT] and not self.specialState:
+        if any([keys[key] for key in game['controls']['keySpecial']]) and not self.specialState:
             if self.specialCharge >= self.specialCost:
-                
                 self.specialCharge -= self.specialCost
                 self.specialState = True
                 self.specialFunction(game)
-        elif not keys[pygame.K_LSHIFT]:
+        elif not any([keys[key] for key in game['controls']['keySpecial']]):
             self.specialState = False
             
-        if keys[pygame.K_LEFT]:
+        if any([keys[key] for key in game['controls']['keyLeft']]):
             if self.evasionModeActive > 0:
                 self.angle -= self.rotation * self.evasionModeRotation * (game['frametime'] / 1000)
             else:
                 self.angle -= self.rotation * (game['frametime'] / 1000)
 
-        if keys[pygame.K_RIGHT]:
+        if any([keys[key] for key in game['controls']['keyRight']]):
             if self.evasionModeActive > 0:
                 self.angle += self.rotation * self.evasionModeRotation * (game['frametime'] / 1000)
             else:
                 self.angle += self.rotation * (game['frametime'] / 1000)
 
-        if keys[pygame.K_UP]:
-            
+        if any([keys[key] for key in game['controls']['keyUp']]):
             if self.afterburn and self.afterburnCharge > 0:
                 self.x_vel += math.cos(self.angle) * (game['frametime'] / 1000) * self.acceleration * self.afterburnBoost
                 self.y_vel += math.sin(self.angle) * (game['frametime'] / 1000) * self.acceleration * self.afterburnBoost
@@ -427,7 +509,7 @@ class Player:
 
             self.progress = 0
 
-        if keys[pygame.K_DOWN]:
+        if any([keys[key] for key in game['controls']['keyDown']]):
             self.x_vel -= math.cos(self.angle) * (game['frametime'] / 1000) * (self.reverse + self.friction)
             self.y_vel -= math.sin(self.angle) * (game['frametime'] / 1000) * (self.reverse + self.friction)
 
@@ -503,8 +585,8 @@ class Player:
                 self.maxSpeed = 200
                 self.rotation = 3
                 self.friction = 100
-                self.maxHealth = 2
-                self.health = 2
+                self.maxHealth = 1.5
+                self.health = 1.5
                 self.specialName = 'TELEPORT'
                 self.specialCharge = 30
                 self.specialMaxCharge = 30
@@ -512,33 +594,85 @@ class Player:
                 self.specialFunction = teleport
 
                 self.noAccelMulti = 0.8
-
-        # Opening JSON file
-        with open('libraries/upgrades.json') as json_file:
-            upgradeDict = json.load(json_file)
-
-        # Upgrade Self
-        for category in ['movement', 'weapons', 'special', 'auxiliary']:
-            tempDict = upgradeDict[game['class']]['upgrades'][category]
-            newFeature = tempDict['newFeature']
             
-            level = game[category]
-            for l in range(level):
-                # Apply a new feature
-                if (l + 1) in newFeature:
+            case 'bomber':
+                self.size *= 1.5
+                self.playerShape = bomberShape
+                self.hitbox = bomberHitbox
+            
+            case 'heavy':
+                self.size *= 2
+                self.playerShape = heavyShape
+                self.hitbox = heavyHitbox
 
-                    # Iterate
-                    index = newFeature.index(l + 1)
-                    if index > 0:
-                        tempDict = tempDict['children']
+        try:
+            # Opening JSON file
+            with open('libraries/upgrades.json') as json_file:
+                upgradeDict = json.load(json_file)
+
+            # Upgrade Self
+            for category in ['movement', 'weapons', 'special', 'auxiliary']:
+                tempDict = upgradeDict[game['class']]['upgrades'][category]
+                newFeature = tempDict['newFeature']
+                
+                level = game[category]
+                for l in range(level):
+                    # Apply a new feature
+                    if (l + 1) in newFeature:
+
+                        # Iterate
+                        index = newFeature.index(l + 1)
+                        if index > 0:
+                            tempDict = tempDict['children']
+                        else:
+                            tempDict = tempDict['features']
+                        tempDict = tempDict[game[f'{category}Features'][index]]
+
+                        self.applyUpgrade(tempDict['function'])
+                    
+                    # Apply a default upgrade
                     else:
-                        tempDict = tempDict['features']
-                    tempDict = tempDict[game[f'{category}Features'][index]]
+                        self.applyUpgrade(tempDict['defaultFunction'])
+                    
+                    level -= 1
+        except Exception as e:
+            print(e)
 
-                    self.applyUpgrade(tempDict['function'])
-                
-                # Apply a default upgrade
-                else:
-                    self.applyUpgrade(tempDict['defaultFunction'])
-                
-                level -= 1
+    def shoot(self, game:dict):
+        t = 'bullet'
+        if self.laser:
+            t = 'laser'
+
+        if not self.chargeBlast or self.charge < self.chargeTime:
+            for i in range(self.spreadFireCount):
+                a = self.angle - self.spreadAngle / 2 + self.spreadAngle * i / max(1, self.spreadFireCount - 1)
+                bXVel = self.x_vel + math.cos(a) * self.bulletSpeed
+                bYVel = self.y_vel + math.sin(a) * self.bulletSpeed
+                bAngle = math.atan2(bYVel, bXVel)
+                bMagnitude = max(self.bulletSpeed, math.sqrt(bXVel ** 2 + bYVel ** 2))
+                game['bullets'].append(Bullet(self.x + math.cos(a) * self.size * self.bulletSize / 2,
+                                            self.y + math.sin(a) * self.size * self.bulletSize / 2,
+                                            a,
+                                            bAngle,
+                                            bMagnitude,
+                                            self.bulletSize,
+                                            damage=self.bulletDamage,
+                                            type=t))
+            return
+        
+        # Charge Blast
+        for i in range(self.chargeBlastCount):
+            a = self.angle - self.chargeBlastSpread / 2 + self.chargeBlastSpread * i / max(1, self.chargeBlastCount - 1)
+            bXVel = self.x_vel + math.cos(a) * self.chargeBlastSpeed
+            bYVel = self.y_vel + math.sin(a) * self.chargeBlastSpeed
+            bAngle = math.atan2(bYVel, bXVel)
+            bMagnitude = max(self.chargeBlastSpeed, math.sqrt(bXVel ** 2 + bYVel ** 2))
+            game['bullets'].append(Bullet(self.x + math.cos(a) * self.size * self.chargeBlastSize / 2,
+                                        self.y + math.sin(a) * self.size * self.chargeBlastSize / 2,
+                                        a,
+                                        bAngle,
+                                        bMagnitude,
+                                        self.chargeBlastSize,
+                                        damage=self.chargeBlastDamage,
+                                        type=t))
+        self.charge = 0

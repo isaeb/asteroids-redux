@@ -30,7 +30,7 @@
                                         }
                                     },
                                     "Tactical Dash":{
-                                        "desc": "Double tap either up or down to perform a forward or backwards dash.",
+                                        "desc": "Double tap any direction to perform a dash.",
                                         "function": "set tacticalDash True;set tacticalDashDistance 100;set tacticalDashSpeed 400",
                                         "children":{
                                             
@@ -40,7 +40,7 @@
                             },
                             "Evasion Mode":{
                                 "desc": "On-hit, enter evasion mode for 2 seconds. While in evasion mode, your spin-speed, acceleration, and friction are improved.",
-                                "function": "set evasionMode True;set evasionModeCost 10;set evasionModeMax 10;set evastionModeDuration 3; set evastionModeRotation 1.2;set evastionModeAcceleration 3;set evastionModeFriction 5;",
+                                "function": "set evasionMode True;set evasionModeCost 10;set evasionModeMax 10;set evasionModeDuration 3;set evasionModeRotation 1.2;set evasionModeAcceleration 3;set evasionModeFriction 5",
                                 "defaultDescription": "25% longer evasion mode.",
                                 "children":{
                                     "Manual Evasion":{
@@ -51,7 +51,7 @@
                                         }
                                     },
                                     "Tactical Dash":{
-                                        "desc": "Double tap either up or down to perform a forward or backwards dash.",
+                                        "desc": "Double tap any direction to perform a dash.",
                                         "function": "set tacticalDash True;set tacticalDashDistance 100;set tacticalDashSpeed 400",
                                         "children":{
                                             
@@ -91,7 +91,7 @@
                             },
                             "Evasion Mode":{
                                 "desc": "On-hit, enter evasion mode for 2 seconds. While in evasion mode, your spin-speed, acceleration, and friction are improved.",
-                                "function": "set evasionMode True;set evasionModeCost 10;set evasionModeMax 10;set evastionModeDuration 3; set evastionModeRotation 1.2;set evastionModeAcceleration 3;set evastionModeFriction 5;",
+                                "function": "set evasionMode True;set evasionModeCost 10;set evasionModeMax 10;set evasionModeDuration 3;set evasionModeRotation 1.2;set evasionModeAcceleration 3;set evasionModeFriction 5",
                                 "defaultDescription": "25% longer evasion mode.",
                                 "children":{
                                     "Manual Evasion":{
@@ -120,65 +120,84 @@
                     6,
                     9
                 ],
-                "defaultDescription": "Your bullets do 30% more damage.",
+                "defaultDescription": "Your bullets do 20% more damage.",
+                "defaultFunction": "multiply bulletDamage 1.2",
                 "features":{
                     "Auto-Fire":{
                         "desc": "Enable fully automatic fire.",
-                        "function": "set autoFire true;set autoFireRate 5",
+                        "function": "set autoFire True;set autoFireRate 2",
                         "defaultDescription": "20% faster fire.",
                         "defaultFunction": "multiply autoFireRate 1.2",
                         "children":{
-                            "Wave-Beam":{
-                                "desc": "Fire 3 bullets at once in a wave.",
+                            "Spread-Beam":{
+                                "desc": "Fire 3 bullets at once. Individual bullets do half damage.",
+                                "function": "set spreadFireCount 3;set spreadAngle math.pi*0.15;multiply bulletDamage 0.5",
                                 "defaultDescription": "Fire 1 more bullet at a time.",
+                                "defaultFunction": "add spreadFireCount 1;add spreadAngle math.pi*0.05",
                                 "children":{
                                     "Ultra-Beam":{
-                                        "desc": "Projectiles do more damage and travel faster."
+                                        "desc": "Projectiles do more damage and travel faster.",
+                                        "function": "multiply bulletSpeed 2; multiply bulletDamage 1.5"
                                     },
                                     "Hyper-Blast":{
-                                        "desc": "Build up charge when not firing. Expend charge by firing a super damaging, hyper-blast."
+                                        "desc": "Build up charge when not firing. Expend charge by firing a super damaging, hyper-blast.",
+                                        "function": "set chargeBlast True;set chargeTime 1.5;set chargeBlastDamage 3;set chargeBlastCount 1;set chargeBlastSize 2;"
                                     }
                                 }
                             },
                             "Laser-Beam":{
                                 "desc": "Bullets are replaced by fast-traveling lasers.",
-                                "defaultDescription": "Your lasers do 30% more damage.",
+                                "function": "set laser True;set bulletSpeed LASER_SPEED",
+                                "defaultDescription": "Your lasers do 20% more damage.",
+                                "defaultFunction": "multiply bulletDamage 1.2",
                                 "children":{
                                     "Piercing Lasers":{
-                                        "desc": "Lasers pierce through enemies."
+                                        "desc": "Lasers pierce through enemies.",
+                                        "function": "set bulletPierce 2"
                                     },
                                     "Hyper-Laser":{
-                                        "desc": "Build up charge when not firing. Expend charge by firing a super damaging, hyper-laser."
+                                        "desc": "Build up charge when not firing. Expend charge by firing a super damaging, hyper-laser.",
+                                        "function": "set chargeBlast True;set chargeTime 1;set chargeBlastDamage 3;set chargeBlastCount 1;set chargeBlastSize 2"
                                     }
                                 }
                             }
                         }
                     },
                     "Spread-Beam":{
-                        "desc": "Fire 3 bullets at once in a spread.",
-                        "defaultDescription": "30% faster fire.",
+                        "desc": "Fire 3 bullets at once. Individual bullets do half damage",
+                        "function": "set spreadFireCount 3;set spreadAngle math.pi*0.15;multiply bulletDamage 0.5",
+                        "defaultDescription": "Fire 1 more bullet at a time.",
+                        "defaultFunction": "add spreadFireCount 1;add spreadAngle math.pi*0.05",
                         "children":{
-                            "Extra Bullets":{
-                                "desc": "Fire 5 bullets instead of 3.",
-                                "defaultDescription": "Fire an extra bullet.",
+                            "Gunner Drone":{
+                                "desc": "Deploy an autonomous drone that fires at enemies.",
+                                "function": "set droneCount 1;set droneFireRate 1.2;set droneDamage 1",
+                                "defaultDescription": "Increase autonomous drone fire rate by 40%.",
+                                "defaultFunction": "multiply droneFireRate 1.4",
                                 "children":{
-                                    "Gunner Drones":{
-                                        "desc": "Deploy 2 drones that stay at your side and fire when you fire."
+                                    "Extra Drone":{
+                                        "desc": "Deploy 2 drones that stay at your side and fire when you fire.",
+                                        "function": "set droneCount 2"
                                     },
-                                    "Orbiting Drone":{
-                                        "desc": "Deploy an orbiting drone that automatically fires at nearby enemies."
+                                    "Laser Drone":{
+                                        "desc": "Upgrade your autonomous drone with lasers. Also improve its health by 100%.",
+                                        "function": "set droneLaser True;set droneBulletSpeed LASER_SPEED"
                                     }
                                 }
                             },
-                            "Spread-Lasers":{
-                                "desc": "Fire 3 lasers instead of 3 bullets.",
-                                "defaultDescription": "Fire an extra laser.",
+                            "Lasers":{
+                                "desc": "Bullets are replaced by fast-traveling lasers.",
+                                "function": "set laser True;set bulletSpeed LASER_SPEED",
+                                "defaultDescription": "Your lasers do 20% more damage.",
+                                "defaultFunction": "multiply bulletDamage 1.2",
                                 "children":{
                                     "Charge Laser":{
-                                        "desc": "Build up charge when not firing. Expend charge by firing a spread of extra damaging, lasers."
+                                        "desc": "Build up charge when not firing. Expend charge by firing a spread of extra damaging, lasers.",
+                                        "function": "set chargeBlast True;set chargeTime 1.5;set chargeBlastDamage 3;set chargeBlastCount 1;set chargeBlastSize 2;"
                                     },
                                     "Laser Drone":{
-                                        "desc": "Deploy an orbiting drone that automatically fires lasers at nearby enemies."
+                                        "desc": "Deploy an orbiting drone that automatically fires lasers at nearby enemies.",
+                                        "function": "set droneCount 1;set droneFireRate 1.2;set droneDamage 1;set droneLaser True;set droneBulletSpeed LASER_SPEED"
                                     }
                                 }
                             }

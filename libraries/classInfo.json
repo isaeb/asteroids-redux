@@ -1,0 +1,14 @@
+{
+    "scout":
+        {
+            "desc": "The scout relies on its superior mobility and teleport to outmaneuver enemies."
+        },
+    "bomber":
+        {
+            "desc": "The bomber specializes in using explosive weapons to wreak havoc on its enemies."
+        },
+    "heavy":
+        {
+            "desc": "The heavy trades mobility for strength. When it comes to damage output, the heavy is unmatched."
+        }
+}

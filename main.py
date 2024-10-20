@@ -23,6 +23,8 @@ from libraries.stages.gameover import Gameover
 from libraries.services.ngio import NGIO
 from libraries.stages.redux import Redux
 from libraries.stages.leaderboards import Leaderboards
+from libraries.stages.charSelect import CSSRedux, CSSClassic
+from libraries.stages.worldMap import WorldMap
 
 
 def initGame():
@@ -46,7 +48,26 @@ def initGame():
         'asteroids': [],
         'particles': [],
         'shipParts': [],
-        'bulletWrap': False
+        'bulletWrap': False,
+        'classes': ['scout', 'bomber', 'heavy'],
+        'controls': {
+            'keyUp': [pygame.K_UP],
+            'keyDown': [pygame.K_DOWN],
+            'keyLeft': [pygame.K_LEFT],
+            'keyRight': [pygame.K_RIGHT],
+            'keyFire': [pygame.K_SPACE, pygame.K_RETURN],
+            'keySpecial': [pygame.K_LSHIFT],
+            'keyPause': [pygame.K_ESCAPE]
+        },
+        'videoSettings': {
+            'maxFPS': -1,
+            'quality': 'high'
+        },
+        'audioSettings': {
+            'master': 100,
+            'music': 100,
+            'sfx': 100
+        }
     }
 
 async def main():
@@ -64,8 +85,12 @@ async def main():
 
     # Main game loop
     while True:
+
         # Set the max framerate
-        game['frametime'] = clock.tick(9999)
+        if game['videoSettings']['maxFPS'] == -1:
+            game['frametime'] = clock.tick(9999)
+        else:
+            game['frametime'] = clock.tick(game['videoSettings']['maxFPS'])
 
         # Handle pygame events
         for event in pygame.event.get():
@@ -79,10 +104,13 @@ async def main():
         
         if type(update) is str:
             stage = {'Title': Title, 
-                     'Classic': Classic, 
-                     'Gameover': Gameover,
-                     'Redux': Redux,
-                     'Leaderboards': Leaderboards}[update](game)
+                    'Classic': Classic, 
+                    'Gameover': Gameover,
+                    'Redux': Redux,
+                    'Leaderboards': Leaderboards,
+                    'CSSRedux': CSSRedux,
+                    'WorldMap': WorldMap,
+                    'CSSClassic': CSSClassic}[update](game)
 
         # Update the Async IO
         await asyncio.sleep(0)

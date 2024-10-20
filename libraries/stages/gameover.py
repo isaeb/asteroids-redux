@@ -108,31 +108,31 @@ class Gameover:
         keys = pygame.key.get_pressed()
 
         # Read player input
-        if keys[pygame.K_SPACE]:
-            if pygame.K_SPACE not in pressedKeys:
-                pressedKeys.append(pygame.K_SPACE)
+        if True in [keys[key] for key in game['controls']['keyFire']]:
+            if 'fire' not in pressedKeys:
+                pressedKeys.append('fire')
                 return list(self.options.values())[self.selected]
         else:
-            if pygame.K_SPACE in pressedKeys:
-                pressedKeys.remove(pygame.K_SPACE)
+            if 'fire' in pressedKeys:
+                pressedKeys.remove('fire')
 
-        if keys[pygame.K_UP]:
-            if pygame.K_UP not in pressedKeys:
-                pressedKeys.append(pygame.K_UP)
+        if True in [keys[key] for key in game['controls']['keyUp']]:
+            if 'up' not in pressedKeys:
+                pressedKeys.append('up')
                 self.selected = max(0, self.selected - 1)
                 self.refreshGui(game)
         else:
-            if pygame.K_UP in pressedKeys:
-                pressedKeys.remove(pygame.K_UP)
+            if 'up' in pressedKeys:
+                pressedKeys.remove('up')
         
-        if keys[pygame.K_DOWN]:
-            if pygame.K_DOWN not in pressedKeys:
-                pressedKeys.append(pygame.K_DOWN)
+        if True in [keys[key] for key in game['controls']['keyDown']]:
+            if 'down' not in pressedKeys:
+                pressedKeys.append('down')
                 self.selected = min(len(self.options) - 1, self.selected + 1)
                 self.refreshGui(game)
         else:
-            if pygame.K_DOWN in pressedKeys:
-                pressedKeys.remove(pygame.K_DOWN)
+            if 'down' in pressedKeys:
+                pressedKeys.remove('down')
 
         return None
 
@@ -154,7 +154,7 @@ class Gameover:
         startColor = (200, 200, 200)
         endColor = (150, 150, 150)
         shadowColor = (50, 50, 50)
-        self.scoreSurface = renderText(f'Score: {game['score']}', scoreFont, startColor, endColor, shadowColor, (3, 3))
+        self.scoreSurface = renderText(f'Score: {game['score']}', scoreFont, startColor, endColor, shadowColor, (3, 3), outline_width=1)
         self.sX = width / 2 - self.scoreSurface.get_width() / 2
         self.sY = height / 8 + self.headerSurface.get_height()
 
@@ -174,7 +174,7 @@ class Gameover:
             else:
                 startColor = (100, 100, 100)
                 endColor = (50, 50, 50)
-            textSurface = renderText(key, font, startColor, endColor, shadowColor, (3, 3))
+            textSurface = renderText(key, font, startColor, endColor, shadowColor, (3, 3), outline_width=1)
             x = width / 2 - textSurface.get_width() / 2
             self.optionSurface.blit(textSurface, (x, y))
             y += textSurface.get_height()
