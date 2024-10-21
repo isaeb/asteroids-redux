@@ -137,7 +137,7 @@ def centerShape(shape:list):
 
     return shape
 
-def randomShape(pointCount:int=30):
+def randomShape(pointCount:int=30, magnitude:int=1):
     """
     Args:
         the number of points in the random shape
@@ -145,7 +145,7 @@ def randomShape(pointCount:int=30):
 
     # Define variables
     shape = []
-    m = 1
+    m = magnitude
     a = 0
 
     # Generate a sorted list of angles

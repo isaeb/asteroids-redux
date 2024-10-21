@@ -204,3 +204,29 @@ def create_vignette_surface(size, edge_color, internal_radius, max_alpha=255, sh
             vignette_surface.set_at((x, y), color)
     
     return vignette_surface
+
+# Function to create a new surface with a gradient circle
+def create_gradient_circle(radius, inner_color, outer_color):
+    # Create a new surface with per-pixel alpha
+    surface = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+    
+    # The center of the circle
+    center = (radius, radius)
+    
+    # Draw the gradient circle
+    for i in range(radius):
+        # Calculate the blend factor
+        blend_factor = i / radius
+        
+        # Interpolate between the outer and inner colors
+        color = (
+            int(outer_color[0] + (inner_color[0] - outer_color[0]) * blend_factor),
+            int(outer_color[1] + (inner_color[1] - outer_color[1]) * blend_factor),
+            int(outer_color[2] + (inner_color[2] - outer_color[2]) * blend_factor),
+            int(outer_color[3] + (inner_color[3] - outer_color[3]) * blend_factor)
+        )
+        
+        # Draw a circle for each step, from the outer edge to the center
+        pygame.draw.circle(surface, color, center, radius - i)
+
+    return surface
